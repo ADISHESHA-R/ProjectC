@@ -22,7 +22,6 @@ on:
         required: true
         type: choice
         options:
-          - dev
           - qa
           - prod
 
@@ -89,18 +88,13 @@ jobs:
             echo "profile=render" >> $GITHUB_OUTPUT
             echo "url=https://attendance-prod.onrender.com" >> $GITHUB_OUTPUT
             echo "branch=main" >> $GITHUB_OUTPUT
-          elif [[ "$ENV_INPUT" == "qa" ]]; then
+          else
+            # QA environment
             echo "env=qa" >> $GITHUB_OUTPUT
             echo "service=attendance-qa" >> $GITHUB_OUTPUT
             echo "profile=render" >> $GITHUB_OUTPUT
             echo "url=https://attendance-qa.onrender.com" >> $GITHUB_OUTPUT
             echo "branch=qa" >> $GITHUB_OUTPUT
-          else
-            echo "env=dev" >> $GITHUB_OUTPUT
-            echo "service=attendance-dev" >> $GITHUB_OUTPUT
-            echo "profile=render" >> $GITHUB_OUTPUT
-            echo "url=https://attendance-dev.onrender.com" >> $GITHUB_OUTPUT
-            echo "branch=dev" >> $GITHUB_OUTPUT
           fi
       
       - name: Deployment Summary

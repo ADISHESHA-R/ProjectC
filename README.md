@@ -19,16 +19,16 @@ Spring Boot backend for Attendance Management System with JWT authentication, ro
 
 | Branch | Environment | Database | Service | Purpose |
 |--------|------------|----------|---------|---------|
-| `dev` | Development | PostgreSQL (Render) | attendance-dev | Backend development |
+| `dev` | Development | H2 (Local) | **Local only** | Backend development & testing |
 | `qa` | QA Testing | PostgreSQL (Render) | attendance-qa | Frontend-Backend integration |
 | `main` | Production | PostgreSQL (Render) | attendance-prod | Production/Client demos |
 
-**Note**: All Render services share the same PostgreSQL database. Local development uses H2 in-memory.
+**Note**: Dev branch is for local development only (no Render service). QA and Prod services on Render share the same PostgreSQL database.
 
 ## 🔗 API Endpoints
 
-- **Dev API**: https://attendance-dev.onrender.com
-  - ⚠️ Backend use only (unstable, changes frequently)
+- **Local Dev**: http://localhost:8080
+  - ✅ Local development only (H2 in-memory database)
   
 - **QA API**: https://attendance-qa.onrender.com
   - ✅ Frontend integration testing (stable)
@@ -89,13 +89,12 @@ JWT_SECRET=your-secret-key
 ## 🔄 Deployment Workflow
 
 ### Backend Developer Workflow:
-1. **Development**: Push to `dev` → Build runs → attendance-dev auto-deploys
+1. **Development**: Work on `dev` branch locally → Test with `mvn spring-boot:run` or Docker
 2. **Ready for Frontend**: Merge `dev` → `qa` → Build runs → Manually deploy to attendance-qa
 3. **Production**: Merge `qa` → `main` → Build runs → Manually deploy to attendance-prod
 
 ### Frontend Developer:
 - Use **QA API** (https://attendance-qa.onrender.com) for integration testing
-- Don't use Dev API (unstable)
 - Don't use Prod API (production only)
 
 ## 👥 Contributing

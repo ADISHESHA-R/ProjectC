@@ -4,13 +4,15 @@
 
 ### For Backend Developers
 
-#### Daily Development:
+#### Daily Development (Local):
 ```bash
 git checkout dev
 # Make changes
-git commit -m "feat: new feature"
-git push origin dev
-# ✅ Auto-deploys to attendance-dev
+# Test locally:
+mvn spring-boot:run
+# Or with Docker:
+docker-compose -f docker-compose.local.yml up
+# No deployment needed - test locally ✅
 ```
 
 #### Ready for Frontend Testing:
@@ -39,9 +41,6 @@ git push origin main
   - ✅ Use this for integration testing
   - Stable environment
   - Updated when backend is ready
-
-- **Dev API**: https://attendance-dev.onrender.com
-  - ⚠️ Don't use (unstable, changes frequently)
 
 - **Prod API**: https://attendance-prod.onrender.com
   - ⚠️ Don't use (production only)
