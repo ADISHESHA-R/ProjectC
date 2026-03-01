@@ -35,9 +35,11 @@
 2. Connect GitHub repository: `Attendance-SystemC/attendance-backend`
 3. Configure:
    - **Name**: `attendance-dev`
+   - **Language**: **Docker** (important!)
    - **Branch**: `dev`
-   - **Build Command**: `mvn clean package -DskipTests`
-   - **Start Command**: `java -jar target/attendance-backend-0.0.1-SNAPSHOT.jar`
+   - **Build Command**: (Leave blank - Docker builds automatically)
+   - **Start Command**: (Leave blank - Docker runs automatically)
+   - **Dockerfile Path**: `Dockerfile` (or leave blank for default)
    - **Auto-Deploy**: ON ✅
 4. Add Environment Variables:
    ```
@@ -58,9 +60,11 @@
 2. Connect GitHub repository: `Attendance-SystemC/attendance-backend`
 3. Configure:
    - **Name**: `attendance-qa`
+   - **Language**: **Docker** (important!)
    - **Branch**: `qa`
-   - **Build Command**: `mvn clean package -DskipTests`
-   - **Start Command**: `java -jar target/attendance-backend-0.0.1-SNAPSHOT.jar`
+   - **Build Command**: (Leave blank - Docker builds automatically)
+   - **Start Command**: (Leave blank - Docker runs automatically)
+   - **Dockerfile Path**: `Dockerfile` (or leave blank for default)
    - **Auto-Deploy**: OFF ❌ (Manual only - keep stable)
 4. Add Environment Variables (SAME database as dev):
    ```
@@ -81,9 +85,11 @@
 2. Connect GitHub repository: `Attendance-SystemC/attendance-backend`
 3. Configure:
    - **Name**: `attendance-prod`
+   - **Language**: **Docker** (important!)
    - **Branch**: `main`
-   - **Build Command**: `mvn clean package -DskipTests`
-   - **Start Command**: `java -jar target/attendance-backend-0.0.1-SNAPSHOT.jar`
+   - **Build Command**: (Leave blank - Docker builds automatically)
+   - **Start Command**: (Leave blank - Docker runs automatically)
+   - **Dockerfile Path**: `Dockerfile` (or leave blank for default)
    - **Auto-Deploy**: OFF ❌ (Manual only)
 4. Add Environment Variables (SAME database):
    ```
