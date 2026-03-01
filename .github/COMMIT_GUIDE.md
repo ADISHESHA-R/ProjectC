@@ -48,6 +48,6 @@ refactor: optimize database queries
 
 ## API Endpoints Reference
 
-- **Dev**: https://attendance-dev.onrender.com (Backend only)
+- **Local Dev**: http://localhost:8080 (Local development only)
 - **QA**: https://attendance-qa.onrender.com (Frontend integration)
 - **Prod**: https://attendance-prod.onrender.com (Production)
