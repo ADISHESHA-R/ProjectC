@@ -1,0 +1,24 @@
+# Render deployment - PostgreSQL (shared database)
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  
+  h2:
+    console:
+      enabled: false  # Disable H2 console on Render
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update  # Update schema automatically
+    show-sql: false
+
+# Logging for Render
+logging:
+  level:
+    root: INFO
+    org.hibernate: INFO
+    com.attendance: INFO

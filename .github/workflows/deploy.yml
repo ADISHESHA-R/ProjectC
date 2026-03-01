@@ -1,0 +1,115 @@
+name: Build and Manual Deploy
+
+on:
+  push:
+    branches:
+      - dev
+      - qa
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '.gitignore'
+      - '*.md'
+  pull_request:
+    branches:
+      - main
+      - qa
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Application
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Build with Maven
+        run: mvn clean package -DskipTests -T 1C
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: jar-file
+          path: target/*.jar
+          retention-days: 7
+      
+      - name: Build Summary
+        run: |
+          echo "## ✅ Build Successful" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Message**: ${{ github.event.head_commit.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: Build completed. Deployment is manual only." >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Deploy to Render (Manual)
+    
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: jar-file
+      
+      - name: Determine Environment
+        id: env
+        run: |
+          ENV_INPUT="${{ github.event.inputs.environment }}"
+          
+          if [[ "$ENV_INPUT" == "prod" ]]; then
+            echo "env=prod" >> $GITHUB_OUTPUT
+            echo "service=attendance-prod" >> $GITHUB_OUTPUT
+            echo "profile=render" >> $GITHUB_OUTPUT
+            echo "url=https://attendance-prod.onrender.com" >> $GITHUB_OUTPUT
+            echo "branch=main" >> $GITHUB_OUTPUT
+          elif [[ "$ENV_INPUT" == "qa" ]]; then
+            echo "env=qa" >> $GITHUB_OUTPUT
+            echo "service=attendance-qa" >> $GITHUB_OUTPUT
+            echo "profile=render" >> $GITHUB_OUTPUT
+            echo "url=https://attendance-qa.onrender.com" >> $GITHUB_OUTPUT
+            echo "branch=qa" >> $GITHUB_OUTPUT
+          else
+            echo "env=dev" >> $GITHUB_OUTPUT
+            echo "service=attendance-dev" >> $GITHUB_OUTPUT
+            echo "profile=render" >> $GITHUB_OUTPUT
+            echo "url=https://attendance-dev.onrender.com" >> $GITHUB_OUTPUT
+            echo "branch=dev" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Manual Deployment Started" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ steps.env.outputs.env }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Profile**: ${{ steps.env.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ steps.env.outputs.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ steps.env.outputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ steps.env.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: Render will deploy from the selected branch." >> $GITHUB_STEP_SUMMARY
