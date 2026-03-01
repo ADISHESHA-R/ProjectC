@@ -17,7 +17,7 @@ public class DatabaseInfo implements CommandLineRunner {
     private DataSource dataSource;
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             System.out.println("========================================");
@@ -25,6 +25,10 @@ public class DatabaseInfo implements CommandLineRunner {
             System.out.println("Version: " + metaData.getDatabaseProductVersion());
             System.out.println("URL: " + metaData.getURL());
             System.out.println("========================================");
+        } catch (Exception e) {
+            // Log error but don't fail application startup
+            System.err.println("Warning: Could not retrieve database info: " + e.getMessage());
+            System.err.println("Application will continue to start...");
         }
     }
 }
