@@ -1,5 +1,7 @@
 # Attendance Management System - Backend
 
+Spring Boot backend for Attendance Management System with JWT authentication, role-based access control, and photo verification
+
 ## 🚀 Tech Stack
 - Java 17
 - Spring Boot 3.2.0
