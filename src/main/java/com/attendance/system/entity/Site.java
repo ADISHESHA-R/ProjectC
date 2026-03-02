@@ -28,7 +28,7 @@ public class Site {
     @Column(length = 500)
     private String address;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
     @CreationTimestamp
