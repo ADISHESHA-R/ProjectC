@@ -2,7 +2,8 @@ package com.attendance.system.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -11,22 +12,29 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Order(1) // Run BEFORE DataInitializer to ensure schema is ready
 @RequiredArgsConstructor
 @Slf4j
-public class DatabaseMigration implements CommandLineRunner {
+public class DatabaseMigration {
     
     private final JdbcTemplate jdbcTemplate;
     
-    @Override
-    public void run(String... args) {
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(1) // Run BEFORE DataInitializer
+    public void onApplicationReady() {
         try {
+            log.info("Starting database migration...");
+            // Add a small delay to ensure Hibernate has finished schema updates
+            Thread.sleep(1000);
             migrateUsersTable();
             migrateSitesTable();
             log.info("✅ Database migration completed successfully");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Migration interrupted");
         } catch (Exception e) {
             log.error("❌ Database migration failed: {}", e.getMessage(), e);
-            // Don't fail startup - just log the error
+            // Don't fail startup - just log the error and continue
+            log.warn("Application will continue despite migration errors");
         }
     }
     
