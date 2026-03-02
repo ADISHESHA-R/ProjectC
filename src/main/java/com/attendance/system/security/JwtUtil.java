@@ -77,7 +77,18 @@ public class JwtUtil {
     }
     
     public String extractRole(String token) {
-        return extractClaim(token, claims -> (String) claims.get("role"));
+        try {
+            Claims claims = extractAllClaims(token);
+            Object roleObj = claims.get("role");
+            if (roleObj != null) {
+                return roleObj.toString();
+            }
+            log.warn("Role claim not found in JWT token");
+            return null;
+        } catch (Exception e) {
+            log.error("Error extracting role from token: {}", e.getMessage());
+            return null;
+        }
     }
     
     public Date extractExpiration(String token) {
