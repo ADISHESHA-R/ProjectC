@@ -111,6 +111,9 @@ public class DatabaseMigration {
             ensureColumnExists("users", "password", "VARCHAR(255)");
             ensureColumnExists("users", "role", "VARCHAR(50)");
             ensureColumnExists("users", "status", "VARCHAR(50)");
+            
+            // Fix employee_status check constraint
+            fixEmployeeStatusConstraint();
         } catch (Exception e) {
             log.warn("Could not migrate users table: {}", e.getMessage());
         }
@@ -223,6 +226,66 @@ public class DatabaseMigration {
             }
         } catch (Exception e) {
             log.warn("Could not ensure column {}.{} exists: {}", tableName, columnName, e.getMessage());
+        }
+    }
+    
+    private void fixEmployeeStatusConstraint() {
+        try {
+            // Check if employee_status column exists
+            String checkColumnSql = """
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' 
+                AND column_name = 'employee_status'
+            """;
+            
+            List<Map<String, Object>> results = jdbcTemplate.queryForList(checkColumnSql);
+            if (results.isEmpty()) {
+                log.info("employee_status column does not exist, skipping constraint fix");
+                return;
+            }
+            
+            // Drop existing check constraint if it exists
+            String dropConstraintSql = """
+                SELECT constraint_name 
+                FROM information_schema.table_constraints 
+                WHERE table_name = 'users' 
+                AND constraint_type = 'CHECK' 
+                AND constraint_name LIKE '%employee_status%'
+            """;
+            
+            List<Map<String, Object>> constraintResults = jdbcTemplate.queryForList(dropConstraintSql);
+            for (Map<String, Object> constraint : constraintResults) {
+                Object constraintNameObj = constraint.get("constraint_name");
+                if (constraintNameObj != null) {
+                    String constraintName = constraintNameObj.toString();
+                    log.info("Dropping existing check constraint: {}", constraintName);
+                    try {
+                        jdbcTemplate.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS \"" + constraintName + "\"");
+                    } catch (Exception e) {
+                        log.warn("Could not drop constraint {}: {}", constraintName, e.getMessage());
+                    }
+                }
+            }
+            
+            // Create new check constraint with correct enum values
+            log.info("Creating employee_status check constraint with correct values");
+            jdbcTemplate.execute("""
+                ALTER TABLE users 
+                ADD CONSTRAINT users_employee_status_check 
+                CHECK (employee_status IN ('ACTIVE', 'ON_LEAVE', 'TERMINATED', 'SUSPENDED') OR employee_status IS NULL)
+            """);
+            
+            log.info("✅ Successfully fixed employee_status check constraint");
+        } catch (Exception e) {
+            log.warn("Could not fix employee_status constraint: {}", e.getMessage());
+            // Try to drop constraint without recreating (let Hibernate handle it)
+            try {
+                jdbcTemplate.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_employee_status_check");
+                log.info("Dropped employee_status constraint, Hibernate will recreate it");
+            } catch (Exception e2) {
+                log.warn("Could not drop constraint: {}", e2.getMessage());
+            }
         }
     }
 }
