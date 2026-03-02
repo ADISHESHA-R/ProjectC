@@ -6,10 +6,12 @@ import com.attendance.system.enums.UserStatus;
 import com.attendance.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Order(2) // Run after DatabaseMigration
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
     

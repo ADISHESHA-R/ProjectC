@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@Order(2) // Run after DataInitializer
+@Order(1) // Run BEFORE DataInitializer to ensure schema is ready
 @RequiredArgsConstructor
 @Slf4j
 public class DatabaseMigration implements CommandLineRunner {
@@ -32,6 +32,19 @@ public class DatabaseMigration implements CommandLineRunner {
     
     private void migrateUsersTable() {
         try {
+            // First check if table exists
+            String checkTableSql = """
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = 'users'
+            """;
+            
+            List<Map<String, Object>> tableResults = jdbcTemplate.queryForList(checkTableSql);
+            if (tableResults.isEmpty()) {
+                log.info("Users table does not exist yet. Hibernate will create it with correct schema.");
+                return;
+            }
+            
             // Check if employee_id column exists
             String checkColumnSql = """
                 SELECT column_name 
@@ -90,6 +103,19 @@ public class DatabaseMigration implements CommandLineRunner {
     
     private void migrateSitesTable() {
         try {
+            // First check if table exists
+            String checkTableSql = """
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = 'sites'
+            """;
+            
+            List<Map<String, Object>> tableResults = jdbcTemplate.queryForList(checkTableSql);
+            if (tableResults.isEmpty()) {
+                log.info("Sites table does not exist yet. Hibernate will create it with correct schema.");
+                return;
+            }
+            
             // Check if is_active column exists
             String checkColumnSql = """
                 SELECT column_name 
