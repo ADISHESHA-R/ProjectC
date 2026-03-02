@@ -27,25 +27,25 @@ public class User {
     @Column(name = "employee_id", nullable = false, unique = true, length = 50)
     private String employeeId;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
     // New Employee Fields
-    @Column(length = 500)
+    @Column(name = "address", length = 500)
     private String address;
 
     @Column(name = "date_of_birth")

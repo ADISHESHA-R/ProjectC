@@ -104,6 +104,13 @@ public class DatabaseMigration {
             } else {
                 log.info("Column employee_id already exists in users table");
             }
+            
+            // Check and fix all other column names to ensure they match expected names
+            ensureColumnExists("users", "name", "VARCHAR(255)");
+            ensureColumnExists("users", "email", "VARCHAR(255)");
+            ensureColumnExists("users", "password", "VARCHAR(255)");
+            ensureColumnExists("users", "role", "VARCHAR(50)");
+            ensureColumnExists("users", "status", "VARCHAR(50)");
         } catch (Exception e) {
             log.warn("Could not migrate users table: {}", e.getMessage());
         }
@@ -165,6 +172,57 @@ public class DatabaseMigration {
             }
         } catch (Exception e) {
             log.warn("Could not migrate sites table: {}", e.getMessage());
+        }
+    }
+    
+    private void ensureColumnExists(String tableName, String columnName, String columnType) {
+        try {
+            String checkSql = """
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = ? 
+                AND column_name = ?
+            """;
+            
+            List<Map<String, Object>> results = jdbcTemplate.queryForList(checkSql, tableName, columnName);
+            
+            if (results.isEmpty()) {
+                log.info("Column {}.{} does not exist. Checking for alternative names...", tableName, columnName);
+                
+                // Check for camelCase version
+                String camelCaseName = columnName.substring(0, 1).toLowerCase() + 
+                    (columnName.length() > 1 ? columnName.substring(1) : "");
+                
+                String checkAlternativeSql = """
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = ? 
+                    AND (LOWER(column_name) = LOWER(?) OR column_name = ?)
+                """;
+                
+                List<Map<String, Object>> altResults = jdbcTemplate.queryForList(
+                    checkAlternativeSql, tableName, columnName, camelCaseName);
+                
+                if (!altResults.isEmpty()) {
+                    Object columnNameObj = altResults.get(0).get("column_name");
+                    if (columnNameObj != null) {
+                        String existingColumn = columnNameObj.toString();
+                        if (existingColumn != null && !existingColumn.equals(columnName)) {
+                            log.info("Renaming column {}.{} to {}", tableName, existingColumn, columnName);
+                            String renameSql = String.format("ALTER TABLE %s RENAME COLUMN \"%s\" TO %s", 
+                                tableName, existingColumn, columnName);
+                            jdbcTemplate.execute(renameSql);
+                        }
+                    }
+                } else {
+                    log.info("Adding missing column {}.{}", tableName, columnName);
+                    String addSql = String.format("ALTER TABLE %s ADD COLUMN %s %s", 
+                        tableName, columnName, columnType);
+                    jdbcTemplate.execute(addSql);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not ensure column {}.{} exists: {}", tableName, columnName, e.getMessage());
         }
     }
 }
