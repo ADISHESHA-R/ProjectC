@@ -32,6 +32,9 @@ jpa:
     hibernate:
       format_sql: true
       dialect: auto
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
 
 # App specific
 app:
