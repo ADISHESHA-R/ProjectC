@@ -3,6 +3,10 @@ spring:
     name: attendance-system
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}  # Default to local (H2)
+  servlet:
+    multipart:
+      max-file-size: 5MB  # Increased for documents
+      max-request-size: 5MB
 
 server:
   port: ${PORT:8080}
@@ -32,8 +36,9 @@ jpa:
 # App specific
 app:
   jwt:
-    secret: ${JWT_SECRET:your-secret-key-change-in-production}
-    expiration: ${JWT_EXPIRATION:86400000}  # 24 hours
+    secret: ${JWT_SECRET:your-secret-key-must-be-at-least-32-characters-long-for-security}
+    expiration: ${JWT_EXPIRATION:1800000}  # 30 minutes
   
   file:
     upload-dir: ${UPLOAD_DIR:./uploads}
+    max-size: 5242880  # 5MB in bytes for documents
