@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -36,7 +37,15 @@ public class SecurityConfig {
     public SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers(
+                    AntPathRequestMatcher.antMatcher("/h2-console/**"),
+                    AntPathRequestMatcher.antMatcher("/api/auth/**"),
+                    AntPathRequestMatcher.antMatcher("/api/users/**"),
+                    AntPathRequestMatcher.antMatcher("/api/attendance/**"),
+                    AntPathRequestMatcher.antMatcher("/api/admin/**")
+                )
+            )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
@@ -50,6 +59,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
                 .requestMatchers("/api/sites/**").authenticated()
                 .anyRequest().authenticated()
             )
@@ -75,6 +85,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
                 .requestMatchers("/api/sites/**").authenticated()
                 .anyRequest().authenticated()
             )

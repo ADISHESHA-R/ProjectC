@@ -62,6 +62,31 @@ public class User {
     @Column(name = "employee_status")
     private EmployeeStatus employeeStatus = EmployeeStatus.ACTIVE;
 
+    // New Required Employee Profile Fields
+    @Column(name = "father_name", length = 255)
+    private String fatherName;
+
+    @Column(name = "date_of_joining")
+    private LocalDate dateOfJoining;
+
+    @Column(name = "office_contact_number", length = 20)
+    private String officeContactNumber;
+
+    @Column(name = "home_contact_number", length = 20)
+    private String homeContactNumber;
+
+    @Column(name = "other_contact_number", length = 20)
+    private String otherContactNumber;
+
+    @Column(name = "identification_mark", length = 500)
+    private String identificationMark;
+
+    @Column(name = "specimen_signature_path")
+    private String specimenSignaturePath; // Path to signature file
+
+    @Column(name = "photo_path")
+    private String photoPath; // Path to photo file
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

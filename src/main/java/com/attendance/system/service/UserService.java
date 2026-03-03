@@ -2,6 +2,7 @@ package com.attendance.system.service;
 
 import com.attendance.system.dto.request.CreateUserRequest;
 import com.attendance.system.dto.request.UpdateUserRequest;
+import com.attendance.system.dto.response.CreateUserResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.EmployeeStatus;
@@ -26,10 +27,13 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     
     @Transactional
-    public UserResponse createUser(CreateUserRequest request) {
+    public CreateUserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
+        
+        // Store plain password before hashing (to return in response)
+        String plainPassword = request.getPassword();
         
         // Check if employeeId already exists
         String employeeId = request.getEmployeeId();
@@ -50,7 +54,7 @@ public class UserService {
         user.setEmployeeId(employeeId);
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPassword(passwordEncoder.encode(plainPassword)); // Hash the password
         user.setRole(request.getRole());
         user.setStatus(UserStatus.ACTIVE);
         user.setAddress(request.getAddress());
@@ -59,8 +63,24 @@ public class UserService {
         user.setEmployeeStatus(request.getEmployeeStatus() != null ? 
                               request.getEmployeeStatus() : EmployeeStatus.ACTIVE);
         
+        // Set new required fields
+        user.setFatherName(request.getFatherName());
+        user.setDateOfJoining(request.getDateOfJoining());
+        user.setOfficeContactNumber(request.getOfficeContactNumber());
+        user.setHomeContactNumber(request.getHomeContactNumber());
+        user.setOtherContactNumber(request.getOtherContactNumber());
+        user.setIdentificationMark(request.getIdentificationMark());
+        // Note: photoPath and specimenSignaturePath will be set when files are uploaded
+        
         user = userRepository.save(user);
-        return mapToUserResponse(user);
+        UserResponse userResponse = mapToUserResponse(user);
+        
+        // Return response with plain password (only returned once during creation)
+        return new CreateUserResponse(
+            userResponse,
+            plainPassword,
+            request.getEmail()
+        );
     }
     
     private String generateEmployeeId() {
@@ -103,6 +123,34 @@ public class UserService {
         }
         if (request.getEmployeeStatus() != null) {
             user.setEmployeeStatus(request.getEmployeeStatus());
+        }
+        
+        // Update new required fields
+        if (request.getFatherName() != null) {
+            user.setFatherName(request.getFatherName());
+        }
+        if (request.getDateOfJoining() != null) {
+            user.setDateOfJoining(request.getDateOfJoining());
+        }
+        if (request.getOfficeContactNumber() != null) {
+            user.setOfficeContactNumber(request.getOfficeContactNumber());
+        }
+        if (request.getHomeContactNumber() != null) {
+            user.setHomeContactNumber(request.getHomeContactNumber());
+        }
+        if (request.getOtherContactNumber() != null) {
+            user.setOtherContactNumber(request.getOtherContactNumber());
+        }
+        if (request.getIdentificationMark() != null) {
+            user.setIdentificationMark(request.getIdentificationMark());
+        }
+        
+        // Update photo and signature paths
+        if (request.getPhotoPath() != null) {
+            user.setPhotoPath(request.getPhotoPath());
+        }
+        if (request.getSpecimenSignaturePath() != null) {
+            user.setSpecimenSignaturePath(request.getSpecimenSignaturePath());
         }
         
         user = userRepository.save(user);
@@ -155,6 +203,14 @@ public class UserService {
             user.getBloodGroup(),
             user.getValidDocumentPath(),
             user.getEmployeeStatus(),
+            user.getFatherName(),
+            user.getDateOfJoining(),
+            user.getOfficeContactNumber(),
+            user.getHomeContactNumber(),
+            user.getOtherContactNumber(),
+            user.getIdentificationMark(),
+            user.getSpecimenSignaturePath(),
+            user.getPhotoPath(),
             user.getCreatedAt()
         );
     }

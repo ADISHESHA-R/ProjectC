@@ -7,6 +7,7 @@ import com.attendance.system.dto.request.UpdateSiteRequest;
 import com.attendance.system.dto.request.UpdateUserRequest;
 import com.attendance.system.dto.response.ApiResponse;
 import com.attendance.system.dto.response.AttendanceResponse;
+import com.attendance.system.dto.response.CreateUserResponse;
 import com.attendance.system.dto.response.DashboardResponse;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.dto.response.UserResponse;
@@ -60,10 +61,10 @@ public class AdminController {
     
     // ==================== USER MANAGEMENT (FULL CRUD) ====================
     @PostMapping("/users")
-    @Operation(summary = "Create user", description = "Create new user (employee or admin) (Admin only)")
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
-        UserResponse user = userService.createUser(request);
-        return ResponseEntity.ok(ApiResponse.success("User created successfully", user));
+    @Operation(summary = "Create user", description = "Create new user (employee or admin) (Admin only). Password is returned in response for admin to share with employee.")
+    public ResponseEntity<ApiResponse<CreateUserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
+        CreateUserResponse response = userService.createUser(request);
+        return ResponseEntity.ok(ApiResponse.success("Employee created successfully. Please share these credentials with the employee:", response));
     }
     
     @GetMapping("/users")
@@ -151,6 +152,58 @@ public class AdminController {
         ));
     }
     
+    @PostMapping("/users/{id}/photo")
+    @Operation(summary = "Upload employee photo", description = "Upload profile photo for employee (JPG, PNG - Max 3MB) (Admin only)")
+    public ResponseEntity<ApiResponse<UserResponse>> uploadPhoto(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        User user = userService.getUserEntityById(id);
+        
+        // Delete old photo if exists
+        if (user.getPhotoPath() != null) {
+            try {
+                fileStorageService.deleteFile(user.getPhotoPath());
+            } catch (Exception e) {
+                // Log but don't fail if old file doesn't exist
+            }
+        }
+        
+        String photoPath = fileStorageService.storePhoto(file, id);
+        user.setPhotoPath(photoPath);
+        User updatedUser = userRepository.save(user);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            "Photo uploaded successfully", 
+            userService.getUserById(updatedUser.getId())
+        ));
+    }
+    
+    @PostMapping("/users/{id}/signature")
+    @Operation(summary = "Upload employee signature", description = "Upload specimen signature for employee (JPG, PNG - Max 2MB) (Admin only)")
+    public ResponseEntity<ApiResponse<UserResponse>> uploadSignature(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        User user = userService.getUserEntityById(id);
+        
+        // Delete old signature if exists
+        if (user.getSpecimenSignaturePath() != null) {
+            try {
+                fileStorageService.deleteFile(user.getSpecimenSignaturePath());
+            } catch (Exception e) {
+                // Log but don't fail if old file doesn't exist
+            }
+        }
+        
+        String signaturePath = fileStorageService.storeSignature(file, id);
+        user.setSpecimenSignaturePath(signaturePath);
+        User updatedUser = userRepository.save(user);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            "Signature uploaded successfully", 
+            userService.getUserById(updatedUser.getId())
+        ));
+    }
+    
     // ==================== SITE MANAGEMENT (FULL CRUD) ====================
     @PostMapping("/sites")
     @Operation(summary = "Create site", description = "Create new site with unique job code (Admin only)")
@@ -207,16 +260,17 @@ public class AdminController {
     
     // ==================== ATTENDANCE MANAGEMENT (FULL CRUD) ====================
     @GetMapping("/attendance")
-    @Operation(summary = "Get all attendance", description = "Get all attendance with filters (date, employee, site, status) (Admin only)")
+    @Operation(summary = "Get all attendance", description = "Get all attendance with filters (date, employee, site, job code, status) (Admin only)")
     public ResponseEntity<ApiResponse<Page<AttendanceResponse>>> getAllAttendance(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Long siteId,
+            @RequestParam(required = false) String jobCode,
             @RequestParam(required = false) AttendanceStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<AttendanceResponse> attendance = attendanceService.getAllAttendance(date, employeeId, siteId, status, pageable);
+        Page<AttendanceResponse> attendance = attendanceService.getAllAttendance(date, employeeId, siteId, jobCode, status, pageable);
         return ResponseEntity.ok(ApiResponse.success(attendance));
     }
     

@@ -10,6 +10,7 @@ import com.attendance.system.entity.Attendance;
 import com.attendance.system.entity.Site;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.AttendanceStatus;
+import com.attendance.system.enums.Role;
 import com.attendance.system.repository.AttendanceRepository;
 import com.attendance.system.repository.SiteRepository;
 import com.attendance.system.repository.UserRepository;
@@ -40,6 +41,11 @@ public class AttendanceService {
     public AttendanceResponse markAttendance(Long employeeId, MarkAttendanceRequest request) {
         User employee = userRepository.findById(employeeId)
             .orElseThrow(() -> new RuntimeException("Employee not found"));
+        
+        // Only employees can mark attendance
+        if (employee.getRole() != Role.EMPLOYEE) {
+            throw new RuntimeException("Only employees can mark attendance");
+        }
         
         Site site = siteRepository.findByIdAndIsActiveTrue(request.getSiteId())
             .orElseThrow(() -> new RuntimeException("Site not found or inactive"));
@@ -119,8 +125,9 @@ public class AttendanceService {
     }
     
     public Page<AttendanceResponse> getAllAttendance(LocalDate date, Long employeeId, 
-                                                      Long siteId, AttendanceStatus status, Pageable pageable) {
-        return attendanceRepository.findByFilters(date, employeeId, siteId, status, pageable)
+                                                      Long siteId, String jobCode, 
+                                                      AttendanceStatus status, Pageable pageable) {
+        return attendanceRepository.findByFilters(date, employeeId, siteId, jobCode, status, pageable)
             .map(this::mapToAttendanceResponse);
     }
     
@@ -238,6 +245,14 @@ public class AttendanceService {
                 employee.getBloodGroup(),
                 employee.getValidDocumentPath(),
                 employee.getEmployeeStatus(),
+                employee.getFatherName(),
+                employee.getDateOfJoining(),
+                employee.getOfficeContactNumber(),
+                employee.getHomeContactNumber(),
+                employee.getOtherContactNumber(),
+                employee.getIdentificationMark(),
+                employee.getSpecimenSignaturePath(),
+                employee.getPhotoPath(),
                 employee.getCreatedAt()
             ),
             new SiteResponse(

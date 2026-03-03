@@ -3,7 +3,6 @@ package com.attendance.system.service;
 import com.attendance.system.dto.request.LoginRequest;
 import com.attendance.system.dto.request.RefreshTokenRequest;
 import com.attendance.system.dto.response.AuthResponse;
-import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.entity.RefreshToken;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.UserStatus;
@@ -52,14 +51,11 @@ public class AuthService {
         refreshTokenEntity.setIsRevoked(false);
         refreshTokenRepository.save(refreshTokenEntity);
         
-        UserResponse userResponse = mapToUserResponse(user);
-        
         return new AuthResponse(
             accessToken,
             refreshToken,
             "Bearer",
-            jwtUtil.extractExpiration(accessToken).getTime() - System.currentTimeMillis(),
-            userResponse
+            jwtUtil.extractExpiration(accessToken).getTime() - System.currentTimeMillis()
         );
     }
     
@@ -84,14 +80,11 @@ public class AuthService {
         
         String newAccessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
         
-        UserResponse userResponse = mapToUserResponse(user);
-        
         return new AuthResponse(
             newAccessToken,
             refreshToken.getToken(),
             "Bearer",
-            jwtUtil.extractExpiration(newAccessToken).getTime() - System.currentTimeMillis(),
-            userResponse
+            jwtUtil.extractExpiration(newAccessToken).getTime() - System.currentTimeMillis()
         );
     }
     
@@ -102,22 +95,5 @@ public class AuthService {
             token.get().setIsRevoked(true);
             refreshTokenRepository.save(token.get());
         }
-    }
-    
-    private UserResponse mapToUserResponse(User user) {
-        return new UserResponse(
-            user.getId(),
-            user.getEmployeeId(),
-            user.getName(),
-            user.getEmail(),
-            user.getRole(),
-            user.getStatus(),
-            user.getAddress(),
-            user.getDateOfBirth(),
-            user.getBloodGroup(),
-            user.getValidDocumentPath(),
-            user.getEmployeeStatus(),
-            user.getCreatedAt()
-        );
     }
 }

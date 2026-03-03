@@ -31,10 +31,12 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
            "(:date IS NULL OR a.date = :date) AND " +
            "(:employeeId IS NULL OR a.employee.id = :employeeId) AND " +
            "(:siteId IS NULL OR a.site.id = :siteId) AND " +
+           "(:jobCode IS NULL OR a.site.jobCode = :jobCode) AND " +
            "(:status IS NULL OR a.status = :status)")
     Page<Attendance> findByFilters(@Param("date") LocalDate date,
                                     @Param("employeeId") Long employeeId,
                                     @Param("siteId") Long siteId,
+                                    @Param("jobCode") String jobCode,
                                     @Param("status") AttendanceStatus status,
                                     Pageable pageable);
     

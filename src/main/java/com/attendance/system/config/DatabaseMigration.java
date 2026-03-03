@@ -111,6 +111,23 @@ public class DatabaseMigration {
             ensureColumnExists("users", "password", "VARCHAR(255)");
             ensureColumnExists("users", "role", "VARCHAR(50)");
             ensureColumnExists("users", "status", "VARCHAR(50)");
+            ensureColumnExists("users", "address", "VARCHAR(500)");
+            ensureColumnExists("users", "date_of_birth", "DATE");
+            ensureColumnExists("users", "blood_group", "VARCHAR(20)");
+            ensureColumnExists("users", "valid_document_path", "VARCHAR(255)");
+            ensureColumnExists("users", "employee_status", "VARCHAR(50)");
+            ensureColumnExists("users", "created_at", "TIMESTAMP");
+            ensureColumnExists("users", "updated_at", "TIMESTAMP");
+            
+            // Add new required employee profile columns
+            ensureColumnExists("users", "father_name", "VARCHAR(255)");
+            ensureColumnExists("users", "date_of_joining", "DATE");
+            ensureColumnExists("users", "office_contact_number", "VARCHAR(20)");
+            ensureColumnExists("users", "home_contact_number", "VARCHAR(20)");
+            ensureColumnExists("users", "other_contact_number", "VARCHAR(20)");
+            ensureColumnExists("users", "identification_mark", "VARCHAR(500)");
+            ensureColumnExists("users", "specimen_signature_path", "VARCHAR(255)");
+            ensureColumnExists("users", "photo_path", "VARCHAR(255)");
             
             // Fix employee_status check constraint
             fixEmployeeStatusConstraint();

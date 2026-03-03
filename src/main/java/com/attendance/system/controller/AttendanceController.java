@@ -54,9 +54,26 @@ public class AttendanceController {
     }
     
     @GetMapping("/{id}")
-    @Operation(summary = "Get attendance by ID", description = "Get attendance details by ID")
-    public ResponseEntity<ApiResponse<AttendanceResponse>> getAttendanceById(@PathVariable Long id) {
+    @Operation(summary = "Get attendance by ID", description = "Get attendance details by ID (employees can only view their own)")
+    public ResponseEntity<ApiResponse<AttendanceResponse>> getAttendanceById(
+            @PathVariable Long id,
+            Authentication authentication) {
         AttendanceResponse attendance = attendanceService.getAttendanceById(id);
+        
+        // Check if user is viewing their own attendance or is admin
+        Long currentUserId = (Long) authentication.getPrincipal();
+        String currentUserRole = authentication.getAuthorities().stream()
+            .map(a -> a.getAuthority().replace("ROLE_", ""))
+            .findFirst()
+            .orElse("");
+        
+        boolean isAdmin = "ADMIN".equals(currentUserRole);
+        boolean isOwnAttendance = attendance.getEmployee().getId().equals(currentUserId);
+        
+        if (!isOwnAttendance && !isAdmin) {
+            throw new RuntimeException("You can only view your own attendance records");
+        }
+        
         return ResponseEntity.ok(ApiResponse.success(attendance));
     }
     

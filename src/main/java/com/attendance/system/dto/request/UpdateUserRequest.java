@@ -19,7 +19,7 @@ public class UpdateUserRequest {
     
     private UserStatus status;
     
-    // New Employee Fields
+    // Employee Profile Fields
     private String address;
     
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -28,4 +28,23 @@ public class UpdateUserRequest {
     private BloodGroup bloodGroup;
     
     private EmployeeStatus employeeStatus;
+
+    // New Required Employee Profile Fields
+    private String fatherName;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate dateOfJoining;
+
+    private String officeContactNumber;
+
+    private String homeContactNumber;
+
+    private String otherContactNumber;
+
+    private String identificationMark;
+
+    // Photo and Signature paths (can be set directly or via upload endpoint)
+    private String photoPath;
+    
+    private String specimenSignaturePath;
 }

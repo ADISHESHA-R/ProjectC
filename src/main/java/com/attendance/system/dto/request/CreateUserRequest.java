@@ -31,7 +31,7 @@ public class CreateUserRequest {
     @NotNull(message = "Role is required")
     private Role role;
 
-    // New Employee Fields
+    // Employee Profile Fields
     private String address;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -40,4 +40,18 @@ public class CreateUserRequest {
     private BloodGroup bloodGroup;
 
     private EmployeeStatus employeeStatus;
+
+    // New Required Employee Profile Fields
+    private String fatherName;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate dateOfJoining;
+
+    private String officeContactNumber;
+
+    private String homeContactNumber;
+
+    private String otherContactNumber;
+
+    private String identificationMark;
 }

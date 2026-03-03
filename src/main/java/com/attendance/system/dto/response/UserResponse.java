@@ -22,12 +22,22 @@ public class UserResponse {
     private Role role;
     private UserStatus status;
     
-    // New Employee Fields
-    private String address;
+    // Employee Profile Fields
+    private String address; // Residential Address
     private LocalDate dateOfBirth;
     private BloodGroup bloodGroup;
     private String validDocumentPath;
     private EmployeeStatus employeeStatus;
+    
+    // New Required Employee Profile Fields
+    private String fatherName;
+    private LocalDate dateOfJoining;
+    private String officeContactNumber;
+    private String homeContactNumber;
+    private String otherContactNumber;
+    private String identificationMark;
+    private String specimenSignaturePath;
+    private String photoPath;
     
     private LocalDateTime createdAt;
 }
