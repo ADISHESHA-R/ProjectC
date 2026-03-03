@@ -13,7 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -35,12 +34,7 @@ public class SecurityConfig {
     public SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers(
-                    AntPathRequestMatcher.antMatcher("/h2-console/**"),
-                    AntPathRequestMatcher.antMatcher("/api/auth/**")
-                )
-            )
+            .csrf(csrf -> csrf.disable())  // Disabled for JWT API (same as Render) – no cookie auth, so CSRF not needed
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             )
