@@ -114,6 +114,9 @@ public class DatabaseMigration {
             
             // Fix employee_status check constraint
             fixEmployeeStatusConstraint();
+            
+            // Fix blood_group column length
+            fixBloodGroupColumnLength();
         } catch (Exception e) {
             log.warn("Could not migrate users table: {}", e.getMessage());
         }
@@ -286,6 +289,36 @@ public class DatabaseMigration {
             } catch (Exception e2) {
                 log.warn("Could not drop constraint: {}", e2.getMessage());
             }
+        }
+    }
+    
+    private void fixBloodGroupColumnLength() {
+        try {
+            // Check if blood_group column exists
+            String checkColumnSql = """
+                SELECT column_name, character_maximum_length 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' 
+                AND column_name = 'blood_group'
+            """;
+            
+            List<Map<String, Object>> results = jdbcTemplate.queryForList(checkColumnSql);
+            if (!results.isEmpty()) {
+                Object lengthObj = results.get(0).get("character_maximum_length");
+                Integer currentLength = lengthObj != null ? (Integer) lengthObj : 0;
+                
+                if (currentLength == null || currentLength < 20) {
+                    log.info("Updating blood_group column length from {} to 20", currentLength);
+                    jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN blood_group TYPE VARCHAR(20)");
+                    log.info("✅ Successfully updated blood_group column length to 20");
+                } else {
+                    log.info("blood_group column already has correct length: {}", currentLength);
+                }
+            } else {
+                log.info("blood_group column does not exist yet, Hibernate will create it");
+            }
+        } catch (Exception e) {
+            log.warn("Could not fix blood_group column length: {}", e.getMessage());
         }
     }
 }

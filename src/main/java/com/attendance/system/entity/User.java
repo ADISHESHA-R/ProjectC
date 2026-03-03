@@ -52,7 +52,7 @@ public class User {
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "blood_group", length = 5)
+    @Column(name = "blood_group", length = 20)
     private BloodGroup bloodGroup;
 
     @Column(name = "valid_document_path")
