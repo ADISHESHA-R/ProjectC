@@ -11,6 +11,7 @@ import com.attendance.system.dto.response.DashboardResponse;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.enums.AttendanceStatus;
+import com.attendance.system.enums.EmployeeStatus;
 import com.attendance.system.entity.User;
 import com.attendance.system.repository.UserRepository;
 import com.attendance.system.service.AttendanceService;
@@ -118,6 +119,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse<UserResponse>> activateUser(@PathVariable Long id) {
         UpdateUserRequest request = new UpdateUserRequest();
         request.setStatus(com.attendance.system.enums.UserStatus.ACTIVE);
+        request.setEmployeeStatus(EmployeeStatus.ACTIVE);
         UserResponse user = userService.updateUser(id, request);
         return ResponseEntity.ok(ApiResponse.success("User activated successfully", user));
     }
@@ -127,6 +129,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse<UserResponse>> deactivateUser(@PathVariable Long id) {
         UpdateUserRequest request = new UpdateUserRequest();
         request.setStatus(com.attendance.system.enums.UserStatus.INACTIVE);
+        request.setEmployeeStatus(EmployeeStatus.SUSPENDED);
         UserResponse user = userService.updateUser(id, request);
         return ResponseEntity.ok(ApiResponse.success("User deactivated successfully", user));
     }
