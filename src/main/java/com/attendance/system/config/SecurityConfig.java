@@ -36,7 +36,10 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**"))
+                .ignoringRequestMatchers(
+                    AntPathRequestMatcher.antMatcher("/h2-console/**"),
+                    AntPathRequestMatcher.antMatcher("/api/auth/**")
+                )
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
