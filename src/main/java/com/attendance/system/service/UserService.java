@@ -6,7 +6,6 @@ import com.attendance.system.dto.response.CreateUserResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.EmployeeStatus;
-import com.attendance.system.enums.Role;
 import com.attendance.system.enums.UserStatus;
 import com.attendance.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -175,6 +174,12 @@ public class UserService {
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+        return mapToUserResponse(user);
+    }
+
+    public UserResponse getUserByEmployeeId(String employeeId) {
+        User user = userRepository.findByEmployeeId(employeeId)
+            .orElseThrow(() -> new RuntimeException("User not found with employeeId: " + employeeId));
         return mapToUserResponse(user);
     }
     

@@ -77,8 +77,15 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(users));
     }
     
+    @GetMapping("/users/by-employee-id/{employeeId}")
+    @Operation(summary = "Get user by employee ID", description = "Get user details by employee ID e.g. ADMIN001, EMP001 (Admin only)")
+    public ResponseEntity<ApiResponse<UserResponse>> getUserByEmployeeId(@PathVariable String employeeId) {
+        UserResponse user = userService.getUserByEmployeeId(employeeId);
+        return ResponseEntity.ok(ApiResponse.success(user));
+    }
+
     @GetMapping("/users/{id}")
-    @Operation(summary = "Get user by ID", description = "Get user details by ID (Admin only)")
+    @Operation(summary = "Get user by ID", description = "Get user details by numeric ID (Admin only)")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
         UserResponse user = userService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user));
