@@ -4,6 +4,7 @@ import com.attendance.system.dto.request.CreateSiteRequest;
 import com.attendance.system.dto.request.UpdateSiteRequest;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.entity.Site;
+import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ public class SiteService {
     @Transactional
     public SiteResponse updateSite(Long id, UpdateSiteRequest request) {
         Site site = siteRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Site not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Site", id));
         
         if (request.getName() != null) {
             site.setName(request.getName());
@@ -62,19 +63,19 @@ public class SiteService {
     @Transactional
     public void deleteSite(Long id) {
         Site site = siteRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Site not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Site", id));
         siteRepository.delete(site);
     }
     
     public SiteResponse getSiteById(Long id) {
         Site site = siteRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Site not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Site", id));
         return mapToSiteResponse(site);
     }
     
     public SiteResponse getSiteByJobCode(String jobCode) {
         Site site = siteRepository.findByJobCode(jobCode)
-            .orElseThrow(() -> new RuntimeException("Site not found with job code: " + jobCode));
+            .orElseThrow(() -> new ResourceNotFoundException("Site not found with job code: " + jobCode));
         return mapToSiteResponse(site);
     }
     

@@ -6,7 +6,9 @@ import com.attendance.system.dto.response.CreateUserResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.EmployeeStatus;
+import com.attendance.system.enums.Role;
 import com.attendance.system.enums.UserStatus;
+import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -91,7 +93,7 @@ public class UserService {
     @Transactional
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User", id));
         
         if (request.getEmployeeId() != null && !request.getEmployeeId().equals(user.getEmployeeId())) {
             if (userRepository.existsByEmployeeId(request.getEmployeeId())) {
@@ -159,27 +161,27 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User", id));
         userRepository.delete(user);
     }
     
     @Transactional
     public void resetPassword(Long id, String newPassword) {
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User", id));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
     
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User", id));
         return mapToUserResponse(user);
     }
 
     public UserResponse getUserByEmployeeId(String employeeId) {
         User user = userRepository.findByEmployeeId(employeeId)
-            .orElseThrow(() -> new RuntimeException("User not found with employeeId: " + employeeId));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with employeeId: " + employeeId));
         return mapToUserResponse(user);
     }
     
@@ -190,7 +192,7 @@ public class UserService {
     
     public List<UserResponse> getAllEmployees() {
         return userRepository.findAll().stream()
-            .filter(user -> user.getRole().name().equals("EMPLOYEE"))
+            .filter(user -> user.getRole() != null && Role.EMPLOYEE.equals(user.getRole()))
             .map(this::mapToUserResponse)
             .collect(Collectors.toList());
     }
@@ -223,6 +225,6 @@ public class UserService {
     // Helper method to get User entity (for AdminController)
     public User getUserEntityById(Long id) {
         return userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 }

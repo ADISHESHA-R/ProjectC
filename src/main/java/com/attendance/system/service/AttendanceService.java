@@ -11,6 +11,7 @@ import com.attendance.system.entity.Site;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.AttendanceStatus;
 import com.attendance.system.enums.Role;
+import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.AttendanceRepository;
 import com.attendance.system.repository.SiteRepository;
 import com.attendance.system.repository.UserRepository;
@@ -40,7 +41,7 @@ public class AttendanceService {
     @Transactional
     public AttendanceResponse markAttendance(Long employeeId, MarkAttendanceRequest request) {
         User employee = userRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
         // Only employees can mark attendance
         if (employee.getRole() != Role.EMPLOYEE) {
@@ -48,7 +49,7 @@ public class AttendanceService {
         }
         
         Site site = siteRepository.findByIdAndIsActiveTrue(request.getSiteId())
-            .orElseThrow(() -> new RuntimeException("Site not found or inactive"));
+            .orElseThrow(() -> new ResourceNotFoundException("Site not found or inactive"));
         
         LocalDate today = LocalDate.now();
         
@@ -77,7 +78,7 @@ public class AttendanceService {
     @Transactional
     public AttendanceResponse approveAttendance(Long attendanceId, ApproveAttendanceRequest request) {
         Attendance attendance = attendanceRepository.findById(attendanceId)
-            .orElseThrow(() -> new RuntimeException("Attendance not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Attendance", attendanceId));
         
         attendance.setStatus(request.getStatus());
         if (request.getStatus() == AttendanceStatus.REJECTED) {
@@ -93,7 +94,7 @@ public class AttendanceService {
     @Transactional
     public void deleteAttendance(Long id) {
         Attendance attendance = attendanceRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Attendance not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Attendance", id));
         
         try {
             fileStorageService.deleteFile(attendance.getPhotoPath());
@@ -106,20 +107,20 @@ public class AttendanceService {
     
     public AttendanceResponse getAttendanceById(Long id) {
         Attendance attendance = attendanceRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Attendance not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Attendance", id));
         return mapToAttendanceResponse(attendance);
     }
     
     public Page<AttendanceResponse> getEmployeeAttendance(Long employeeId, Pageable pageable) {
         User employee = userRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         return attendanceRepository.findByEmployee(employee, pageable)
             .map(this::mapToAttendanceResponse);
     }
     
     public Page<AttendanceResponse> getSiteAttendance(Long siteId, Pageable pageable) {
         Site site = siteRepository.findById(siteId)
-            .orElseThrow(() -> new RuntimeException("Site not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
         return attendanceRepository.findBySite(site, pageable)
             .map(this::mapToAttendanceResponse);
     }
@@ -140,7 +141,7 @@ public class AttendanceService {
             Pageable pageable) {
         // Verify employee exists
         userRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
         if (siteId != null) {
             return attendanceRepository.findByEmployeeAndDateRangeAndSite(
@@ -157,8 +158,8 @@ public class AttendanceService {
     public List<AttendanceResponse> getEmployeeAttendanceByDate(
             Long employeeId, 
             LocalDate date) {
-        User employee = userRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+        userRepository.findById(employeeId)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
         return attendanceRepository.findByEmployeeAndDate(employeeId, date)
             .stream()
@@ -170,7 +171,7 @@ public class AttendanceService {
     public AttendanceCalendarResponse getEmployeeAttendanceCalendar(Long employeeId) {
         // Verify employee exists
         userRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
         List<LocalDate> attendanceDates = attendanceRepository.findDistinctDatesByEmployee(employeeId);
         
@@ -202,7 +203,7 @@ public class AttendanceService {
     public Map<String, Object> getEmployeeAttendanceSummary(Long employeeId, int year, int month) {
         // Verify employee exists
         userRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
