@@ -87,7 +87,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         SecurityContextHolder.clearContext();
                     }
                 } else {
-                    log.warn("JWT token validation failed for path: {}", path);
+                    log.warn("JWT token validation failed for path: {}. Token may be expired, invalid, or signed with a different secret.", path);
                     SecurityContextHolder.clearContext();
                 }
             } else {

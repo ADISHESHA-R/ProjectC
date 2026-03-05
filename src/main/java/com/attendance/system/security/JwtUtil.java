@@ -28,8 +28,15 @@ public class JwtUtil {
     private Long accessTokenExpiration;
     
     private SecretKey getSigningKey() {
+        if (secret == null || secret.isEmpty()) {
+            throw new IllegalArgumentException("JWT secret is not configured. Please set JWT_SECRET environment variable.");
+        }
         if (secret.length() < 32) {
-            throw new IllegalArgumentException("JWT secret must be at least 32 characters long");
+            throw new IllegalArgumentException("JWT secret must be at least 32 characters long. Current length: " + secret.length());
+        }
+        // Warn if using default secret in production
+        if (secret.equals("your-secret-key-must-be-at-least-32-characters-long-for-security")) {
+            log.warn("⚠️ WARNING: Using default JWT secret! This is insecure for production. Please set JWT_SECRET environment variable.");
         }
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
@@ -111,13 +118,16 @@ public class JwtUtil {
             log.error("JWT token is expired: {}", e.getMessage());
             throw e;
         } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
+            log.error("Invalid JWT token format: {}", e.getMessage());
             throw e;
         } catch (SignatureException e) {
-            log.error("JWT signature does not match: {}", e.getMessage());
+            log.error("JWT signature does not match. This usually means the token was signed with a different secret. Check JWT_SECRET environment variable matches the environment where the token was generated.");
             throw e;
         } catch (IllegalArgumentException e) {
             log.error("JWT claims string is empty: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error parsing JWT token: {}", e.getMessage());
             throw e;
         }
     }
