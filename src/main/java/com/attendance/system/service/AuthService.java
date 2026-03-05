@@ -61,39 +61,74 @@ public class AuthService {
     
     @Transactional
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.getRefreshToken())
-            .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+        String tokenString = request.getRefreshToken();
         
-        if (refreshToken.getIsRevoked()) {
-            throw new RuntimeException("Refresh token has been revoked");
+        // First validate the JWT token structure and signature
+        try {
+            if (!jwtUtil.validateToken(tokenString)) {
+                throw new RuntimeException("Refresh token is invalid or expired. Please login again.");
+            }
+            
+            // Verify it's actually a refresh token (has type claim)
+            try {
+                String email = jwtUtil.extractEmail(tokenString);
+                Long userId = jwtUtil.extractUserId(tokenString);
+                
+                // Try to find the token in database
+                Optional<RefreshToken> tokenOptional = refreshTokenRepository.findByToken(tokenString);
+                if (tokenOptional.isEmpty()) {
+                    // Token is valid JWT but not in database - likely from different environment
+                    throw new RuntimeException("Refresh token not found. This token may have been generated in a different environment. Please login again to get a new token.");
+                }
+                RefreshToken refreshToken = tokenOptional.get();
+                
+                if (refreshToken.getIsRevoked()) {
+                    throw new RuntimeException("Refresh token has been revoked. Please login again.");
+                }
+                
+                if (refreshToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+                    throw new RuntimeException("Refresh token has expired. Please login again.");
+                }
+                
+                User user = refreshToken.getUser();
+                
+                // Verify user from token matches user from database
+                if (!user.getId().equals(userId) || !user.getEmail().equals(email)) {
+                    throw new RuntimeException("Refresh token user mismatch. Please login again.");
+                }
+                
+                if (user.getStatus() != UserStatus.ACTIVE) {
+                    throw new RuntimeException("User account is inactive");
+                }
+                
+                String newAccessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
+                
+                return new AuthResponse(
+                    newAccessToken,
+                    refreshToken.getToken(),
+                    "Bearer",
+                    jwtUtil.extractExpiration(newAccessToken).getTime() - System.currentTimeMillis()
+                );
+            } catch (io.jsonwebtoken.ExpiredJwtException e) {
+                throw new RuntimeException("Refresh token has expired. Please login again.");
+            } catch (io.jsonwebtoken.security.SignatureException e) {
+                throw new RuntimeException("Refresh token signature is invalid. This token may have been generated with a different JWT secret. Please login again.");
+            }
+        } catch (RuntimeException e) {
+            // Re-throw our custom exceptions
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid refresh token: " + e.getMessage() + ". Please login again.");
         }
-        
-        if (refreshToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Refresh token has expired");
-        }
-        
-        User user = refreshToken.getUser();
-        
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new RuntimeException("User account is inactive");
-        }
-        
-        String newAccessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
-        
-        return new AuthResponse(
-            newAccessToken,
-            refreshToken.getToken(),
-            "Bearer",
-            jwtUtil.extractExpiration(newAccessToken).getTime() - System.currentTimeMillis()
-        );
     }
     
     @Transactional
     public void logout(String refreshToken) {
-        Optional<RefreshToken> token = refreshTokenRepository.findByToken(refreshToken);
-        if (token.isPresent()) {
-            token.get().setIsRevoked(true);
-            refreshTokenRepository.save(token.get());
+        Optional<RefreshToken> tokenOptional = refreshTokenRepository.findByToken(refreshToken);
+        if (tokenOptional.isPresent()) {
+            RefreshToken token = tokenOptional.get();
+            token.setIsRevoked(true);
+            refreshTokenRepository.save(token);
         }
     }
 }
