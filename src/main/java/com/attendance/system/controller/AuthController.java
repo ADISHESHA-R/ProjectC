@@ -35,9 +35,26 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    @Operation(summary = "User logout", description = "Logout and revoke refresh token")
-    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequest request) {
-        authService.logout(request.getRefreshToken());
+    @Operation(summary = "User logout", description = "Logout and revoke refresh token. Accepts refresh token in request body or Authorization header.")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestBody(required = false) RefreshTokenRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String refreshToken = null;
+        
+        // Try to get refresh token from request body first
+        if (request != null && request.getRefreshToken() != null && !request.getRefreshToken().isEmpty()) {
+            refreshToken = request.getRefreshToken();
+        } 
+        // Fallback to Authorization header if body is empty
+        else if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            refreshToken = authHeader.substring(7);
+        }
+        
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            throw new RuntimeException("Refresh token is required in request body or Authorization header");
+        }
+        
+        authService.logout(refreshToken);
         return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
     }
 }

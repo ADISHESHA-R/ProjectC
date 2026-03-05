@@ -50,51 +50,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
             
-            if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
-                String email = jwtUtil.extractEmail(jwt);
-                String role = jwtUtil.extractRole(jwt);
-                Long userId = jwtUtil.extractUserId(jwt);
-                
-                log.debug("JWT Authentication - Email: {}, Role: {}, UserId: {}", email, role, userId);
-                
-                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    // Ensure role is not null
-                    if (role == null || role.isEmpty()) {
-                        log.warn("Role is null or empty in JWT token for user: {}", email);
-                        role = "EMPLOYEE"; // Default role if missing
+            if (StringUtils.hasText(jwt)) {
+                if (jwtUtil.validateToken(jwt)) {
+                    String email = jwtUtil.extractEmail(jwt);
+                    String role = jwtUtil.extractRole(jwt);
+                    Long userId = jwtUtil.extractUserId(jwt);
+                    
+                    log.debug("JWT Authentication - Email: {}, Role: {}, UserId: {}", email, role, userId);
+                    
+                    if (email != null) {
+                        // Clear any existing authentication
+                        SecurityContextHolder.clearContext();
+                        
+                        // Ensure role is not null
+                        if (role == null || role.isEmpty()) {
+                            log.warn("Role is null or empty in JWT token for user: {}", email);
+                            role = "EMPLOYEE"; // Default role if missing
+                        }
+                        
+                        String authority = "ROLE_" + role.toUpperCase();
+                        log.debug("Setting authentication with authority: {}", authority);
+                        
+                        UsernamePasswordAuthenticationToken authentication = 
+                            new UsernamePasswordAuthenticationToken(
+                                userId,
+                                null,
+                                Collections.singletonList(new SimpleGrantedAuthority(authority))
+                            );
+                        
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        
+                        log.debug("Authentication set successfully for user: {} with role: {}", email, role);
+                    } else {
+                        log.warn("Email is null in JWT token - clearing security context");
+                        SecurityContextHolder.clearContext();
                     }
-                    
-                    String authority = "ROLE_" + role.toUpperCase();
-                    log.debug("Setting authentication with authority: {}", authority);
-                    
-                    UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            Collections.singletonList(new SimpleGrantedAuthority(authority))
-                        );
-                    
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    
-                    log.debug("Authentication set successfully for user: {} with role: {}", email, role);
                 } else {
-                    if (email == null) {
-                        log.warn("Email is null in JWT token");
-                    }
-                    if (SecurityContextHolder.getContext().getAuthentication() != null) {
-                        log.debug("Authentication already exists in SecurityContext");
-                    }
+                    log.warn("JWT token validation failed for path: {}", path);
+                    SecurityContextHolder.clearContext();
                 }
             } else {
-                if (!StringUtils.hasText(jwt)) {
-                    log.debug("No JWT token found in request");
-                } else {
-                    log.warn("JWT token validation failed");
-                }
+                log.debug("No JWT token found in request for path: {}", path);
+                SecurityContextHolder.clearContext();
             }
         } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage(), e);
+            log.error("Cannot set user authentication for path {}: {}", path, e.getMessage(), e);
+            SecurityContextHolder.clearContext();
         }
         
         filterChain.doFilter(request, response);
