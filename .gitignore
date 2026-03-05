@@ -81,3 +81,26 @@ Thumbs.db
 # Application specific
 logs/
 temp/
+
+# Frontend - Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend - Build
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Frontend - Environment
+frontend/.env.local
+frontend/.env.*.local
+
+# Frontend - IDE
+frontend/.idea/
+frontend/.vscode/
+frontend/*.swp
+frontend/*.swo

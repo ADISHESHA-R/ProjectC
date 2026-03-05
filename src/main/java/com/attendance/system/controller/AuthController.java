@@ -36,9 +36,8 @@ public class AuthController {
     
     @PostMapping("/logout")
     @Operation(summary = "User logout", description = "Logout and revoke refresh token")
-    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authHeader) {
-        String refreshToken = authHeader.replace("Bearer ", "");
-        authService.logout(refreshToken);
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequest request) {
+        authService.logout(request.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
     }
 }

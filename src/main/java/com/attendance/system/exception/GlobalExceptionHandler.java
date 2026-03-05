@@ -29,8 +29,11 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error("Validation failed"));
+        ApiResponse<Map<String, String>> response = new ApiResponse<>();
+        response.setSuccess(false);
+        response.setMessage("Validation failed");
+        response.setData(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
     
     @ExceptionHandler(Exception.class)
