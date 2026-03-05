@@ -51,15 +51,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
             
             if (StringUtils.hasText(jwt)) {
+                log.info("JWT token found for path: {}", path);
                 try {
                     if (jwtUtil.validateToken(jwt)) {
                         String email = jwtUtil.extractEmail(jwt);
                         String role = jwtUtil.extractRole(jwt);
                         Long userId = jwtUtil.extractUserId(jwt);
                         
-                        log.debug("JWT Authentication - Email: {}, Role: {}, UserId: {}", email, role, userId);
+                        log.info("JWT Authentication - Email: {}, Role: {}, UserId: {}", email, role, userId);
                         
-                        if (email != null) {
+                        if (email != null && userId != null) {
                             // Clear any existing authentication
                             SecurityContextHolder.clearContext();
                             
@@ -70,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             }
                             
                             String authority = "ROLE_" + role.toUpperCase();
-                            log.debug("Setting authentication with authority: {}", authority);
+                            log.info("Setting authentication with authority: {} for user: {}", authority, email);
                             
                             UsernamePasswordAuthenticationToken authentication = 
                                 new UsernamePasswordAuthenticationToken(
@@ -82,28 +83,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                             SecurityContextHolder.getContext().setAuthentication(authentication);
                             
-                            log.debug("Authentication set successfully for user: {} with role: {}", email, role);
+                            log.info("✅ Authentication set successfully for user: {} (ID: {}) with role: {}", email, userId, role);
                         } else {
-                            log.warn("Email is null in JWT token - clearing security context");
+                            log.warn("Email or UserId is null in JWT token - Email: {}, UserId: {}", email, userId);
                             SecurityContextHolder.clearContext();
                         }
                     } else {
-                        log.warn("JWT token validation failed for path: {}. Token may be expired, invalid, or signed with a different secret.", path);
+                        log.warn("❌ JWT token validation failed for path: {}. Token may be expired, invalid, or signed with a different secret.", path);
                         SecurityContextHolder.clearContext();
                     }
                 } catch (io.jsonwebtoken.ExpiredJwtException e) {
-                    log.warn("JWT token expired for path: {}. Please login again or use refresh token endpoint to get a new access token.", path);
+                    log.warn("❌ JWT token expired for path: {}. Expired at: {}. Please login again or use refresh token endpoint.", path, e.getClaims().getExpiration());
+                    SecurityContextHolder.clearContext();
+                } catch (io.jsonwebtoken.security.SignatureException e) {
+                    log.error("❌ JWT signature mismatch for path: {}. Token was signed with a different secret. Error: {}", path, e.getMessage());
                     SecurityContextHolder.clearContext();
                 } catch (Exception e) {
-                    log.warn("JWT token validation error for path {}: {}", path, e.getMessage());
+                    log.error("❌ JWT token validation error for path {}: {}", path, e.getMessage(), e);
                     SecurityContextHolder.clearContext();
                 }
             } else {
-                log.debug("No JWT token found in request for path: {}", path);
+                log.info("No JWT token found in request for path: {}. Authorization header: {}", path, request.getHeader("Authorization") != null ? "present but invalid format" : "missing");
                 SecurityContextHolder.clearContext();
             }
         } catch (Exception e) {
-            log.error("Cannot set user authentication for path {}: {}", path, e.getMessage(), e);
+            log.error("❌ Cannot set user authentication for path {}: {}", path, e.getMessage(), e);
             SecurityContextHolder.clearContext();
         }
         
