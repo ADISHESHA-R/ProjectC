@@ -17,6 +17,20 @@ public class FileStorageService {
     @Value("${app.file.upload-dir}")
     private String uploadDir;
     
+    private Path getUploadPath() {
+        // Normalize the path to handle relative paths like "./uploads"
+        Path path = Paths.get(uploadDir);
+        return path.normalize().toAbsolutePath();
+    }
+    
+    private Path getUploadPath(String subdirectory) {
+        Path basePath = getUploadPath();
+        if (subdirectory != null && !subdirectory.isEmpty()) {
+            return basePath.resolve(subdirectory).normalize();
+        }
+        return basePath;
+    }
+    
     public String storeFile(MultipartFile file, Long userId) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File is empty");
@@ -31,9 +45,13 @@ public class FileStorageService {
             throw new IllegalArgumentException("File size exceeds 3MB limit");
         }
         
-        Path uploadPath = Paths.get(uploadDir);
+        Path uploadPath = getUploadPath();
         if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new IOException("Failed to create upload directory: " + uploadPath, e);
+            }
         }
         
         String originalFilename = file.getOriginalFilename();
@@ -73,9 +91,13 @@ public class FileStorageService {
             throw new IllegalArgumentException("File size exceeds 5MB limit");
         }
         
-        Path uploadPath = Paths.get(uploadDir, "documents");
+        Path uploadPath = getUploadPath("documents");
         if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new IOException("Failed to create documents directory: " + uploadPath, e);
+            }
         }
         
         String originalFilename = file.getOriginalFilename();
@@ -107,9 +129,13 @@ public class FileStorageService {
             throw new IllegalArgumentException("File size exceeds 3MB limit");
         }
         
-        Path uploadPath = Paths.get(uploadDir, "photos");
+        Path uploadPath = getUploadPath("photos");
         if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new IOException("Failed to create photos directory: " + uploadPath, e);
+            }
         }
         
         String originalFilename = file.getOriginalFilename();
@@ -141,9 +167,13 @@ public class FileStorageService {
             throw new IllegalArgumentException("File size exceeds 2MB limit");
         }
         
-        Path uploadPath = Paths.get(uploadDir, "signatures");
+        Path uploadPath = getUploadPath("signatures");
         if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new IOException("Failed to create signatures directory: " + uploadPath, e);
+            }
         }
         
         String originalFilename = file.getOriginalFilename();
@@ -159,19 +189,12 @@ public class FileStorageService {
     }
     
     public Path loadFile(String filename) {
-        return Paths.get(uploadDir).resolve(filename);
+        return getUploadPath().resolve(filename).normalize();
     }
     
     public void deleteFile(String filename) throws IOException {
         // Handle subdirectories (photos/, signatures/, documents/)
-        Path filePath;
-        if (filename.contains("/")) {
-            // File is in a subdirectory
-            filePath = Paths.get(uploadDir).resolve(filename);
-        } else {
-            // File is in root upload directory
-            filePath = Paths.get(uploadDir).resolve(filename);
-        }
+        Path filePath = getUploadPath().resolve(filename).normalize();
         Files.deleteIfExists(filePath);
     }
 }
