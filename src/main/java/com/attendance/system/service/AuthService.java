@@ -5,6 +5,7 @@ import com.attendance.system.dto.request.RefreshTokenRequest;
 import com.attendance.system.dto.response.AuthResponse;
 import com.attendance.system.entity.RefreshToken;
 import com.attendance.system.entity.User;
+import com.attendance.system.enums.Role;
 import com.attendance.system.enums.UserStatus;
 import com.attendance.system.repository.RefreshTokenRepository;
 import com.attendance.system.repository.UserRepository;
@@ -37,6 +38,50 @@ public class AuthService {
         
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new RuntimeException("User account is inactive");
+        }
+        
+        refreshTokenRepository.revokeAllUserTokens(user);
+        
+        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getId());
+        
+        RefreshToken refreshTokenEntity = new RefreshToken();
+        refreshTokenEntity.setUser(user);
+        refreshTokenEntity.setToken(refreshToken);
+        refreshTokenEntity.setExpiryDate(LocalDateTime.now().plusDays(7));
+        refreshTokenEntity.setIsRevoked(false);
+        refreshTokenRepository.save(refreshTokenEntity);
+        
+        return new AuthResponse(
+            accessToken,
+            refreshToken,
+            "Bearer",
+            jwtUtil.extractExpiration(accessToken).getTime() - System.currentTimeMillis()
+        );
+    }
+    
+    /**
+     * Login for a specific role. Rejects if user's role does not match expected role.
+     */
+    @Transactional
+    public AuthResponse loginAsRole(LoginRequest request, Role expectedRole) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+        
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new RuntimeException("User account is inactive");
+        }
+        
+        if (user.getRole() == null || user.getRole() != expectedRole) {
+            if (expectedRole == Role.ADMIN) {
+                throw new RuntimeException("Invalid login. Admin access only.");
+            } else {
+                throw new RuntimeException("Invalid login. Employee access only.");
+            }
         }
         
         refreshTokenRepository.revokeAllUserTokens(user);

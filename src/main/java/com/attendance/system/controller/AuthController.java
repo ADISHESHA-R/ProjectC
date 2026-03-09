@@ -4,6 +4,7 @@ import com.attendance.system.dto.request.LoginRequest;
 import com.attendance.system.dto.request.RefreshTokenRequest;
 import com.attendance.system.dto.response.ApiResponse;
 import com.attendance.system.dto.response.AuthResponse;
+import com.attendance.system.enums.Role;
 import com.attendance.system.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,10 +21,25 @@ public class AuthController {
     
     private final AuthService authService;
     
-    @PostMapping("/login")
-    @Operation(summary = "User login", description = "Login with email and password")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    // Single login (any role) - commented out; use /admin/login or /employee/login instead
+    // @PostMapping("/login")
+    // @Operation(summary = "User login", description = "Login with email and password (any role)")
+    // public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    //     AuthResponse response = authService.login(request);
+    //     return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    // }
+    
+    @PostMapping("/admin/login")
+    @Operation(summary = "Admin login", description = "Login for admin only. Returns 400 if user is not ADMIN.")
+    public ResponseEntity<ApiResponse<AuthResponse>> adminLogin(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.loginAsRole(request, Role.ADMIN);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    }
+    
+    @PostMapping("/employee/login")
+    @Operation(summary = "Employee login", description = "Login for employee only. Returns 400 if user is not EMPLOYEE.")
+    public ResponseEntity<ApiResponse<AuthResponse>> employeeLogin(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.loginAsRole(request, Role.EMPLOYEE);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
     

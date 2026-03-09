@@ -54,6 +54,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.info("JWT token found for path: {}", path);
                 try {
                     if (jwtUtil.validateToken(jwt)) {
+                        String type = jwtUtil.extractType(jwt);
+                        if (type == null || !"access".equalsIgnoreCase(type)) {
+                            log.warn("❌ Rejected non-access token (type={}) for path: {}. Use access token in Authorization header.", type, path);
+                            SecurityContextHolder.clearContext();
+                            filterChain.doFilter(request, response);
+                            return;
+                        }
                         String email = jwtUtil.extractEmail(jwt);
                         String role = jwtUtil.extractRole(jwt);
                         Long userId = jwtUtil.extractUserId(jwt);

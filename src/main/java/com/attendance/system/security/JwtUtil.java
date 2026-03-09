@@ -97,6 +97,20 @@ public class JwtUtil {
             return null;
         }
     }
+
+    /**
+     * Returns the token type claim: "access" or "refresh". Returns null if missing or on error.
+     */
+    public String extractType(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object typeObj = claims.get("type");
+            return typeObj != null ? typeObj.toString() : null;
+        } catch (Exception e) {
+            log.error("Error extracting type from token: {}", e.getMessage());
+            return null;
+        }
+    }
     
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
