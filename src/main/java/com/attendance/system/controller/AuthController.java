@@ -72,5 +72,11 @@ public class AuthController {
         
         authService.logout(refreshToken);
         return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+    } 
+    
+    @GetMapping("/home")
+    @Operation(summary = "Home / status", description = "Avoid cold start by returning a simple message")
+    public ResponseEntity<ApiResponse<String>> home() {
+        return ResponseEntity.ok(ApiResponse.success("Restart...", "Avoid cold start by returning a simple message"));
     }
 }
