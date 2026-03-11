@@ -62,6 +62,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
                 .requestMatchers("/api/sites/**").authenticated()
                 .requestMatchers("/api/users/**").authenticated() // Explicitly allow authenticated users
+                .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -89,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
                 .requestMatchers("/api/sites/**").authenticated()
                 .requestMatchers("/api/users/**").authenticated() // Explicitly allow authenticated users
+                .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
