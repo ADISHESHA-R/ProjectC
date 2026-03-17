@@ -45,7 +45,6 @@ public class AttendanceService {
         User employee = userRepository.findById(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
-        // Only employees can mark attendance
         if (employee.getRole() != Role.EMPLOYEE) {
             throw new RuntimeException("Only employees can mark attendance");
         }
@@ -54,9 +53,34 @@ public class AttendanceService {
             .orElseThrow(() -> new ResourceNotFoundException("Site not found or inactive"));
         
         LocalDate today = LocalDate.now();
+        var existingOpt = attendanceRepository.findByEmployeeAndDateAndSite(employee, today, site);
         
-        if (attendanceRepository.findByEmployeeAndDateAndSite(employee, today, site).isPresent()) {
-            throw new RuntimeException("Attendance already marked for today at this site");
+        if (existingOpt.isPresent()) {
+            Attendance existing = existingOpt.get();
+            if (existing.getStatus() == AttendanceStatus.APPROVED) {
+                throw new RuntimeException("Attendance already approved for this day at this site. Cannot resubmit.");
+            }
+            if (existing.getStatus() == AttendanceStatus.PENDING) {
+                throw new RuntimeException("Attendance pending for this day at this site. Cannot resubmit.");
+            }
+            // REJECTED -> allow resubmit: update existing record
+            try {
+                try {
+                    fileStorageService.deleteFile(existing.getPhotoPath());
+                } catch (Exception e) {
+                    // ignore if old file missing
+                }
+                String photoPath = fileStorageService.storeFile(request.getPhoto(), employeeId);
+                existing.setPhotoPath(photoPath);
+                existing.setTime(LocalTime.now());
+                existing.setShift(request.getShift());
+                existing.setStatus(AttendanceStatus.PENDING);
+                existing.setRejectionReason(null);
+                existing = attendanceRepository.save(existing);
+                return mapToAttendanceResponse(existing);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to resubmit attendance: " + e.getMessage());
+            }
         }
         
         try {
