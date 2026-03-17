@@ -2,6 +2,7 @@ package com.attendance.system.service;
 
 import com.attendance.system.dto.request.ApproveAttendanceRequest;
 import com.attendance.system.dto.request.MarkAttendanceRequest;
+import com.attendance.system.dto.request.UpdateAttendanceShiftRequest;
 import com.attendance.system.dto.response.AttendanceCalendarResponse;
 import com.attendance.system.dto.response.AttendanceResponse;
 import com.attendance.system.dto.response.SiteResponse;
@@ -11,6 +12,7 @@ import com.attendance.system.entity.Site;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.AttendanceStatus;
 import com.attendance.system.enums.Role;
+import com.attendance.system.enums.Shift;
 import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.AttendanceRepository;
 import com.attendance.system.repository.SiteRepository;
@@ -67,6 +69,7 @@ public class AttendanceService {
             attendance.setTime(LocalTime.now());
             attendance.setPhotoPath(photoPath);
             attendance.setStatus(AttendanceStatus.PENDING);
+            attendance.setShift(request.getShift());
             
             attendance = attendanceRepository.save(attendance);
             return mapToAttendanceResponse(attendance);
@@ -87,6 +90,15 @@ public class AttendanceService {
             attendance.setRejectionReason(null);
         }
         
+        attendance = attendanceRepository.save(attendance);
+        return mapToAttendanceResponse(attendance);
+    }
+    
+    @Transactional
+    public AttendanceResponse updateAttendanceShift(Long attendanceId, UpdateAttendanceShiftRequest request) {
+        Attendance attendance = attendanceRepository.findById(attendanceId)
+            .orElseThrow(() -> new ResourceNotFoundException("Attendance", attendanceId));
+        attendance.setShift(request.getShift());
         attendance = attendanceRepository.save(attendance);
         return mapToAttendanceResponse(attendance);
     }
@@ -187,7 +199,8 @@ public class AttendanceService {
                     latest.getId(),
                     latest.getSite().getName(),
                     latest.getSite().getJobCode(),
-                    latest.getStatus().toString()
+                    latest.getStatus().toString(),
+                    latest.getShift() != null ? latest.getShift().name() : Shift.FULL_DAY.name()
                 ));
             }
         }
@@ -270,6 +283,7 @@ public class AttendanceService {
             attendance.getPhotoPath(),
             attendance.getStatus(),
             attendance.getRejectionReason(),
+            attendance.getShift() != null ? attendance.getShift() : Shift.FULL_DAY,
             attendance.getCreatedAt()
         );
     }

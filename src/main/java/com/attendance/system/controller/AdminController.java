@@ -1,14 +1,18 @@
 package com.attendance.system.controller;
 
 import com.attendance.system.dto.request.ApproveAttendanceRequest;
+import com.attendance.system.dto.request.UpdateAttendanceShiftRequest;
+import com.attendance.system.dto.request.CreateNoticeRequest;
 import com.attendance.system.dto.request.CreateSiteRequest;
 import com.attendance.system.dto.request.CreateUserRequest;
+import com.attendance.system.dto.request.UpdateNoticeRequest;
 import com.attendance.system.dto.request.UpdateSiteRequest;
 import com.attendance.system.dto.request.UpdateUserRequest;
 import com.attendance.system.dto.response.ApiResponse;
 import com.attendance.system.dto.response.AttendanceResponse;
 import com.attendance.system.dto.response.CreateUserResponse;
 import com.attendance.system.dto.response.DashboardResponse;
+import com.attendance.system.dto.response.NoticeResponse;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.enums.AttendanceStatus;
@@ -18,6 +22,7 @@ import com.attendance.system.repository.UserRepository;
 import com.attendance.system.service.AttendanceService;
 import com.attendance.system.service.DashboardService;
 import com.attendance.system.service.FileStorageService;
+import com.attendance.system.service.NoticeService;
 import com.attendance.system.service.SiteService;
 import com.attendance.system.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +53,7 @@ public class AdminController {
     private final AttendanceService attendanceService;
     private final DashboardService dashboardService;
     private final SiteService siteService;
+    private final NoticeService noticeService;
     private final FileStorageService fileStorageService;
     private final UserRepository userRepository;
     
@@ -319,10 +325,56 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Attendance updated successfully", attendance));
     }
     
+    @PutMapping("/attendance/{id}/shift")
+    @Operation(summary = "Update attendance shift", description = "Update shift (FIRST_HALF, SECOND_HALF, FULL_DAY) for an attendance entry (Admin only)")
+    public ResponseEntity<ApiResponse<AttendanceResponse>> updateAttendanceShift(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAttendanceShiftRequest request) {
+        AttendanceResponse attendance = attendanceService.updateAttendanceShift(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Shift updated successfully", attendance));
+    }
+    
     @DeleteMapping("/attendance/{id}")
     @Operation(summary = "Delete attendance", description = "Delete attendance record by ID (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deleteAttendance(@PathVariable Long id) {
         attendanceService.deleteAttendance(id);
         return ResponseEntity.ok(ApiResponse.success("Attendance deleted successfully", null));
+    }
+
+    // ==================== NOTICE MANAGEMENT (ADMIN CRUD) ====================
+    @PostMapping("/notices")
+    @Operation(summary = "Create notice", description = "Create new notice message for employees (Admin only)")
+    public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(@Valid @RequestBody CreateNoticeRequest request) {
+        NoticeResponse notice = noticeService.create(request);
+        return ResponseEntity.ok(ApiResponse.success("Notice created successfully", notice));
+    }
+
+    @GetMapping("/notices")
+    @Operation(summary = "Get all notices", description = "Get list of all notices (Admin only)")
+    public ResponseEntity<ApiResponse<List<NoticeResponse>>> getAllNotices() {
+        return ResponseEntity.ok(ApiResponse.success(noticeService.getAll()));
+    }
+
+    @GetMapping("/notices/{id}")
+    @Operation(summary = "Get notice by ID", description = "Get notice details by ID (Admin only)")
+    public ResponseEntity<ApiResponse<NoticeResponse>> getNoticeById(@PathVariable Long id) {
+        NoticeResponse notice = noticeService.getById(id);
+        return ResponseEntity.ok(ApiResponse.success(notice));
+    }
+
+    @PutMapping("/notices/{id}")
+    @Operation(summary = "Update notice", description = "Update notice message (Admin only)")
+    public ResponseEntity<ApiResponse<NoticeResponse>> updateNotice(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateNoticeRequest request) {
+        NoticeResponse notice = noticeService.update(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Notice updated successfully", notice));
+    }
+
+    @DeleteMapping("/notices/{id}")
+    @Operation(summary = "Delete notice", description = "Delete notice by ID (Admin only)")
+    public ResponseEntity<ApiResponse<Void>> deleteNotice(@PathVariable Long id) {
+        noticeService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Notice deleted successfully", null));
     }
 }

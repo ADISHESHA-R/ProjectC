@@ -60,6 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
+                .requestMatchers("/api/notices", "/api/notices/**").authenticated() // All authenticated users can view notices
                 .requestMatchers("/api/sites/**").authenticated()
                 .requestMatchers("/api/users/**").authenticated() // Explicitly allow authenticated users
                 .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
@@ -88,6 +89,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
+                .requestMatchers("/api/notices", "/api/notices/**").authenticated() // All authenticated users can view notices
                 .requestMatchers("/api/sites/**").authenticated()
                 .requestMatchers("/api/users/**").authenticated() // Explicitly allow authenticated users
                 .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files

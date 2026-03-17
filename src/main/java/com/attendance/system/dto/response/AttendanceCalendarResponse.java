@@ -25,5 +25,6 @@ public class AttendanceCalendarResponse {
         private String siteName;
         private String jobCode;
         private String status; // PENDING, APPROVED, REJECTED
+        private String shift;   // FIRST_HALF, SECOND_HALF, FULL_DAY
     }
 }

@@ -1,6 +1,7 @@
 package com.attendance.system.entity;
 
 import com.attendance.system.enums.AttendanceStatus;
+import com.attendance.system.enums.Shift;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -45,6 +46,10 @@ public class Attendance {
 
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shift")
+    private Shift shift = Shift.FULL_DAY;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

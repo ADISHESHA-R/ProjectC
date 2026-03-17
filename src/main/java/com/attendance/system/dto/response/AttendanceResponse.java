@@ -1,6 +1,7 @@
 package com.attendance.system.dto.response;
 
 import com.attendance.system.enums.AttendanceStatus;
+import com.attendance.system.enums.Shift;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,5 +22,6 @@ public class AttendanceResponse {
     private String photoPath;
     private AttendanceStatus status;
     private String rejectionReason;
+    private Shift shift;
     private LocalDateTime createdAt;
 }
