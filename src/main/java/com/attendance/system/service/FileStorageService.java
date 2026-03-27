@@ -149,6 +149,38 @@ public class FileStorageService {
         
         return "photos/" + filename;
     }
+
+    /** Machinery catalog images; path prefix {@code machinery/} for use with {@link #loadFile(String)}. */
+    public String storeMachineryImage(MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.equals("image/jpeg") &&
+                                    !contentType.equals("image/png") &&
+                                    !contentType.equals("image/jpg"))) {
+            throw new IllegalArgumentException("Only JPG and PNG images are allowed");
+        }
+        if (file.getSize() > 3 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds 3MB limit");
+        }
+        Path uploadPath = getUploadPath("machinery");
+        if (!Files.exists(uploadPath)) {
+            try {
+                Files.createDirectories(uploadPath);
+            } catch (IOException e) {
+                throw new IOException("Failed to create machinery directory: " + uploadPath, e);
+            }
+        }
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename != null && originalFilename.contains(".")
+            ? originalFilename.substring(originalFilename.lastIndexOf("."))
+            : ".jpg";
+        String filename = "machinery_" + UUID.randomUUID() + extension;
+        Path filePath = uploadPath.resolve(filename);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        return "machinery/" + filename;
+    }
     
     public String storeSignature(MultipartFile file, Long userId) throws IOException {
         if (file.isEmpty()) {
