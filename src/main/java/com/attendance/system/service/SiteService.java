@@ -5,6 +5,9 @@ import com.attendance.system.dto.request.UpdateSiteRequest;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.entity.Site;
 import com.attendance.system.exception.ResourceNotFoundException;
+import com.attendance.system.repository.AttendanceRepository;
+import com.attendance.system.repository.MachineryRepository;
+import com.attendance.system.repository.MachineryUsageRepository;
 import com.attendance.system.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,9 @@ import java.util.stream.Collectors;
 public class SiteService {
     
     private final SiteRepository siteRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final MachineryRepository machineryRepository;
+    private final MachineryUsageRepository machineryUsageRepository;
     
     @Transactional
     public SiteResponse createSite(CreateSiteRequest request) {
@@ -64,6 +70,18 @@ public class SiteService {
     public void deleteSite(Long id) {
         Site site = siteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Site", id));
+        if (attendanceRepository.countBySite_Id(id) > 0) {
+            throw new IllegalStateException(
+                "Cannot delete this site: attendance records still reference it. Remove or reassign those records first.");
+        }
+        if (machineryUsageRepository.countBySite_Id(id) > 0) {
+            throw new IllegalStateException(
+                "Cannot delete this site: machinery usage records still reference it.");
+        }
+        if (machineryRepository.countBySite_Id(id) > 0) {
+            throw new IllegalStateException(
+                "Cannot delete this site: machinery catalog entries still reference it. Delete or move those machines first.");
+        }
         siteRepository.delete(site);
     }
     

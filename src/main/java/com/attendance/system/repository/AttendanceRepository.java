@@ -17,6 +17,9 @@ import java.util.Optional;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
+
+    long countBySite_Id(Long siteId);
+
     Optional<Attendance> findByEmployeeAndDateAndSite(User employee, LocalDate date, Site site);
     
     Page<Attendance> findByEmployee(User employee, Pageable pageable);

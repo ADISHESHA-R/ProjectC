@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface MachineryUsageRepository extends JpaRepository<MachineryUsage, Long> {
 
+    long countBySite_Id(Long siteId);
+
     List<MachineryUsage> findBySite_IdAndUsageDateOrderByMachinery_CodeAsc(Long siteId, LocalDate usageDate);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
