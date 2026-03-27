@@ -2,6 +2,7 @@ package com.attendance.system.repository;
 
 import com.attendance.system.entity.MachineryUsage;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,7 +13,9 @@ public interface MachineryUsageRepository extends JpaRepository<MachineryUsage, 
 
     List<MachineryUsage> findBySite_IdAndUsageDateOrderByMachinery_CodeAsc(Long siteId, LocalDate usageDate);
 
-    void deleteBySite_IdAndUsageDate(Long siteId, LocalDate usageDate);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM MachineryUsage u WHERE u.site.id = :siteId AND u.usageDate = :usageDate")
+    int deleteAllForSiteAndDate(@Param("siteId") Long siteId, @Param("usageDate") LocalDate usageDate);
 
     List<MachineryUsage> findBySite_IdAndUsageDateBetween(Long siteId, LocalDate start, LocalDate end);
 

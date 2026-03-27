@@ -188,16 +188,24 @@ public class MachineryService {
             .orElseThrow(() -> new ResourceNotFoundException("Site", request.getSiteId()));
         LocalDate date = request.getDate();
 
-        machineryUsageRepository.deleteBySite_IdAndUsageDate(site.getId(), date);
+        machineryUsageRepository.deleteAllForSiteAndDate(site.getId(), date);
 
         if (request.getLines() == null || request.getLines().isEmpty()) {
             return;
         }
 
+        // One row per (site, date, machinery): merge duplicate machineryIds (last line wins)
+        Map<Long, UsageLineRequest> uniqueByMachinery = new LinkedHashMap<>();
         for (UsageLineRequest line : request.getLines()) {
-            if (line.getQty() == null || line.getQty().compareTo(BigDecimal.ZERO) <= 0) {
+            if (line.getMachineryId() == null) {
                 continue;
             }
+            if (line.getQty() != null && line.getQty().compareTo(BigDecimal.ZERO) > 0) {
+                uniqueByMachinery.put(line.getMachineryId(), line);
+            }
+        }
+
+        for (UsageLineRequest line : uniqueByMachinery.values()) {
             Machinery mach = machineryRepository.findById(line.getMachineryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Machinery", line.getMachineryId()));
             if (!mach.getSite().getId().equals(site.getId())) {
