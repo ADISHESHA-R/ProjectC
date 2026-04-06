@@ -191,6 +191,9 @@ public class UserService {
 
     public Page<UserResponse> searchUsers(String search, Role role, UserStatus status, Pageable pageable) {
         String q = (search != null && !search.isBlank()) ? search.trim() : null;
+        if (q == null) {
+            return userRepository.filterUsers(role, status, pageable).map(this::mapToUserResponse);
+        }
         return userRepository.searchUsers(q, role, status, pageable).map(this::mapToUserResponse);
     }
     
