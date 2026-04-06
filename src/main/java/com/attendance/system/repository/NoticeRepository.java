@@ -14,7 +14,13 @@ import java.util.List;
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
     List<Notice> findAllByOrderByCreatedAtDesc();
 
-    @Query("SELECT n FROM Notice n WHERE " +
-           "(:search IS NULL OR LOWER(n.message) LIKE LOWER(CONCAT('%', :search, '%')))")
+    @Query("SELECT n FROM Notice n")
+    Page<Notice> filterNotices(Pageable pageable);
+
+    @Query(value = "SELECT n.* FROM notices n WHERE " +
+           "LOWER(CAST(n.message AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))",
+           countQuery = "SELECT count(*) FROM notices n WHERE " +
+           "LOWER(CAST(n.message AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))",
+           nativeQuery = true)
     Page<Notice> searchNotices(@Param("search") String search, Pageable pageable);
 }

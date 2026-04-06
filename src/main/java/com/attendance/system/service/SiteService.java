@@ -107,6 +107,9 @@ public class SiteService {
 
     public Page<SiteResponse> searchSites(String search, Boolean isActive, Pageable pageable) {
         String q = (search != null && !search.isBlank()) ? search.trim() : null;
+        if (q == null) {
+            return siteRepository.filterSites(isActive, pageable).map(this::mapToSiteResponse);
+        }
         return siteRepository.searchSites(q, isActive, pageable).map(this::mapToSiteResponse);
     }
     

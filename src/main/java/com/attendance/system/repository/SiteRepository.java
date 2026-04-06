@@ -13,11 +13,21 @@ import java.util.Optional;
 @Repository
 public interface SiteRepository extends JpaRepository<Site, Long> {
 
-    @Query("SELECT s FROM Site s WHERE " +
-           "(:search IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(s.jobCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(COALESCE(s.address, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:isActive IS NULL OR s.isActive = :isActive)")
+    /** List/filter only — no LOWER() on text columns (avoids PostgreSQL lower(bytea) when columns are bytea). */
+    @Query("SELECT s FROM Site s WHERE (:isActive IS NULL OR s.isActive = :isActive)")
+    Page<Site> filterSites(@Param("isActive") Boolean isActive, Pageable pageable);
+
+    @Query(value = "SELECT s.* FROM sites s WHERE " +
+           "(LOWER(CAST(s.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(CAST(s.job_code AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(CAST(COALESCE(s.address, '') AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:isActive IS NULL OR s.is_active = :isActive)",
+           countQuery = "SELECT count(*) FROM sites s WHERE " +
+           "(LOWER(CAST(s.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(CAST(s.job_code AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(CAST(COALESCE(s.address, '') AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:isActive IS NULL OR s.is_active = :isActive)",
+           nativeQuery = true)
     Page<Site> searchSites(
         @Param("search") String search,
         @Param("isActive") Boolean isActive,

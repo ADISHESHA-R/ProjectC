@@ -62,6 +62,9 @@ public class NoticeService {
 
     public Page<NoticeResponse> searchNotices(String search, Pageable pageable) {
         String q = (search != null && !search.isBlank()) ? search.trim() : null;
+        if (q == null) {
+            return noticeRepository.filterNotices(pageable).map(this::mapToResponse);
+        }
         return noticeRepository.searchNotices(q, pageable).map(this::mapToResponse);
     }
 
