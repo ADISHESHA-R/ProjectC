@@ -8,7 +8,9 @@ import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class NoticeService {
+
+    private static final int ADMIN_NOTICE_LIST_MAX = 10_000;
 
     private final NoticeRepository noticeRepository;
 
@@ -66,6 +70,12 @@ public class NoticeService {
             return noticeRepository.filterNotices(pageable).map(this::mapToResponse);
         }
         return noticeRepository.searchNotices(q, pageable).map(this::mapToResponse);
+    }
+
+    public List<NoticeResponse> listNoticesForAdmin(String search) {
+        Pageable pageable = PageRequest.of(0, ADMIN_NOTICE_LIST_MAX,
+                Sort.by(Sort.Direction.DESC, "updatedAt"));
+        return searchNotices(search, pageable).getContent();
     }
 
     private NoticeResponse mapToResponse(Notice notice) {

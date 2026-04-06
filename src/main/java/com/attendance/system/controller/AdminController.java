@@ -232,14 +232,11 @@ public class AdminController {
     }
     
     @GetMapping("/sites")
-    @Operation(summary = "Get sites (search & filter)", description = "Paginated sites. Optional: search (name, jobCode, address), isActive true/false (Admin only)")
-    public ResponseEntity<ApiResponse<Page<SiteResponse>>> getAllSites(
+    @Operation(summary = "Get sites (search & filter)", description = "Sites as a JSON array in data (up to 10k). Optional: search, isActive (Admin only).")
+    public ResponseEntity<ApiResponse<List<SiteResponse>>> getAllSites(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-        Page<SiteResponse> sites = siteService.searchSites(search, isActive, pageable);
+            @RequestParam(required = false) Boolean isActive) {
+        List<SiteResponse> sites = siteService.listSitesForAdmin(search, isActive);
         return ResponseEntity.ok(ApiResponse.success(sites));
     }
     
@@ -362,13 +359,10 @@ public class AdminController {
     }
 
     @GetMapping("/notices")
-    @Operation(summary = "Get notices (search)", description = "Paginated notices, newest updates first. Optional: search (message contains, case-insensitive) (Admin only)")
-    public ResponseEntity<ApiResponse<Page<NoticeResponse>>> getAllNotices(
-            @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
-        Page<NoticeResponse> notices = noticeService.searchNotices(search, pageable);
+    @Operation(summary = "Get notices (search)", description = "Notices as a JSON array in data (up to 10k), newest first. Optional: search (Admin only).")
+    public ResponseEntity<ApiResponse<List<NoticeResponse>>> getAllNotices(
+            @RequestParam(required = false) String search) {
+        List<NoticeResponse> notices = noticeService.listNoticesForAdmin(search);
         return ResponseEntity.ok(ApiResponse.success(notices));
     }
 
