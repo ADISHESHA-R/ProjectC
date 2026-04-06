@@ -10,6 +10,8 @@ import com.attendance.system.repository.MachineryRepository;
 import com.attendance.system.repository.MachineryUsageRepository;
 import com.attendance.system.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,6 +103,11 @@ public class SiteService {
         return siteRepository.findAll().stream()
             .map(this::mapToSiteResponse)
             .collect(Collectors.toList());
+    }
+
+    public Page<SiteResponse> searchSites(String search, Boolean isActive, Pageable pageable) {
+        String q = (search != null && !search.isBlank()) ? search.trim() : null;
+        return siteRepository.searchSites(q, isActive, pageable).map(this::mapToSiteResponse);
     }
     
     public List<SiteResponse> getActiveSites() {

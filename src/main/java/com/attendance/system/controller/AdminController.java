@@ -17,6 +17,8 @@ import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.enums.AttendanceStatus;
 import com.attendance.system.enums.EmployeeStatus;
+import com.attendance.system.enums.Role;
+import com.attendance.system.enums.UserStatus;
 import com.attendance.system.entity.User;
 import com.attendance.system.repository.UserRepository;
 import com.attendance.system.service.AttendanceService;
@@ -33,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -74,12 +77,15 @@ public class AdminController {
     }
     
     @GetMapping("/users")
-    @Operation(summary = "Get all users", description = "Get paginated list of all users (Admin only)")
+    @Operation(summary = "Get users (search & filter)", description = "Paginated users. Optional: search (name, email, employeeId), role, status (Admin only)")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false) UserStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<UserResponse> users = userService.getAllUsers(pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        Page<UserResponse> users = userService.searchUsers(search, role, status, pageable);
         return ResponseEntity.ok(ApiResponse.success(users));
     }
     
@@ -226,9 +232,15 @@ public class AdminController {
     }
     
     @GetMapping("/sites")
-    @Operation(summary = "Get all sites", description = "Get list of all sites including inactive (Admin only)")
-    public ResponseEntity<ApiResponse<List<SiteResponse>>> getAllSites() {
-        return ResponseEntity.ok(ApiResponse.success(siteService.getAllSites()));
+    @Operation(summary = "Get sites (search & filter)", description = "Paginated sites. Optional: search (name, jobCode, address), isActive true/false (Admin only)")
+    public ResponseEntity<ApiResponse<Page<SiteResponse>>> getAllSites(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        Page<SiteResponse> sites = siteService.searchSites(search, isActive, pageable);
+        return ResponseEntity.ok(ApiResponse.success(sites));
     }
     
     @GetMapping("/sites/{id}")
@@ -350,9 +362,14 @@ public class AdminController {
     }
 
     @GetMapping("/notices")
-    @Operation(summary = "Get all notices", description = "Get list of all notices (Admin only)")
-    public ResponseEntity<ApiResponse<List<NoticeResponse>>> getAllNotices() {
-        return ResponseEntity.ok(ApiResponse.success(noticeService.getAll()));
+    @Operation(summary = "Get notices (search)", description = "Paginated notices, newest updates first. Optional: search (message contains, case-insensitive) (Admin only)")
+    public ResponseEntity<ApiResponse<Page<NoticeResponse>>> getAllNotices(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
+        Page<NoticeResponse> notices = noticeService.searchNotices(search, pageable);
+        return ResponseEntity.ok(ApiResponse.success(notices));
     }
 
     @GetMapping("/notices/{id}")

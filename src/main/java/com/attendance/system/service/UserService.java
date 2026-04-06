@@ -186,8 +186,12 @@ public class UserService {
     }
     
     public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable)
-            .map(this::mapToUserResponse);
+        return searchUsers(null, null, null, pageable);
+    }
+
+    public Page<UserResponse> searchUsers(String search, Role role, UserStatus status, Pageable pageable) {
+        String q = (search != null && !search.isBlank()) ? search.trim() : null;
+        return userRepository.searchUsers(q, role, status, pageable).map(this::mapToUserResponse);
     }
     
     public List<UserResponse> getAllEmployees() {

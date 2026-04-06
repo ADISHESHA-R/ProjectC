@@ -7,6 +7,8 @@ import com.attendance.system.entity.Notice;
 import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +58,11 @@ public class NoticeService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Page<NoticeResponse> searchNotices(String search, Pageable pageable) {
+        String q = (search != null && !search.isBlank()) ? search.trim() : null;
+        return noticeRepository.searchNotices(q, pageable).map(this::mapToResponse);
     }
 
     private NoticeResponse mapToResponse(Notice notice) {
