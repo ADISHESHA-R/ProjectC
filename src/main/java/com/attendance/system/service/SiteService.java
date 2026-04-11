@@ -11,9 +11,7 @@ import com.attendance.system.repository.MachineryUsageRepository;
 import com.attendance.system.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +21,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SiteService {
-
-    private static final int ADMIN_SITE_LIST_MAX = 10_000;
 
     private final SiteRepository siteRepository;
     private final AttendanceRepository attendanceRepository;
@@ -115,11 +111,6 @@ public class SiteService {
             return siteRepository.filterSites(isActive, pageable).map(this::mapToSiteResponse);
         }
         return siteRepository.searchSites(q, isActive, pageable).map(this::mapToSiteResponse);
-    }
-
-    public List<SiteResponse> listSitesForAdmin(String search, Boolean isActive) {
-        Pageable pageable = PageRequest.of(0, ADMIN_SITE_LIST_MAX, Sort.by("name").ascending());
-        return searchSites(search, isActive, pageable).getContent();
     }
 
     public List<SiteResponse> getActiveSites() {
