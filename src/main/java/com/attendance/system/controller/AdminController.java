@@ -242,7 +242,17 @@ public class AdminController {
         Page<SiteResponse> sites = siteService.searchSites(search, isActive, pageable);
         return ResponseEntity.ok(ApiResponse.success(sites));
     }
-    
+
+    /**
+     * Flat list for select/dropdown UIs ({@code data} is a JSON array). Paginated table remains
+     * {@code GET /api/admin/sites}. Path {@code /site-options} avoids clashing with {@code /sites/{id}}.
+     */
+    @GetMapping("/site-options")
+    @Operation(summary = "Active sites for dropdowns", description = "Active sites as data[] for Machinery and other admin selects. GET /sites is unchanged (paginated).")
+    public ResponseEntity<ApiResponse<List<SiteResponse>>> getSiteOptionsForSelect() {
+        return ResponseEntity.ok(ApiResponse.success(siteService.getActiveSites()));
+    }
+
     @GetMapping("/sites/{id}")
     @Operation(summary = "Get site by ID", description = "Get site details by ID (Admin only)")
     public ResponseEntity<ApiResponse<SiteResponse>> getSiteById(@PathVariable Long id) {
