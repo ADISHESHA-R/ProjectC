@@ -7,6 +7,7 @@ import com.attendance.system.enums.AttendanceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
+public interface AttendanceRepository extends JpaRepository<Attendance, Long>, JpaSpecificationExecutor<Attendance> {
 
     long countBySite_Id(Long siteId);
 
@@ -29,20 +30,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     Page<Attendance> findByDate(LocalDate date, Pageable pageable);
     
     Page<Attendance> findByStatus(AttendanceStatus status, Pageable pageable);
-    
-    @Query("SELECT a FROM Attendance a WHERE " +
-           "(:date IS NULL OR a.date = :date) AND " +
-           "(:employeeId IS NULL OR a.employee.id = :employeeId) AND " +
-           "(:siteId IS NULL OR a.site.id = :siteId) AND " +
-           "(:jobCode IS NULL OR a.site.jobCode = :jobCode) AND " +
-           "(:status IS NULL OR a.status = :status)")
-    Page<Attendance> findByFilters(@Param("date") LocalDate date,
-                                    @Param("employeeId") Long employeeId,
-                                    @Param("siteId") Long siteId,
-                                    @Param("jobCode") String jobCode,
-                                    @Param("status") AttendanceStatus status,
-                                    Pageable pageable);
-    
+
     long countByDate(LocalDate date);
     
     long countByStatus(AttendanceStatus status);
@@ -77,12 +65,12 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
            "ORDER BY a.date DESC")
     List<LocalDate> findDistinctDatesByEmployee(@Param("employeeId") Long employeeId);
     
-    // Get attendance by employee, date range, and optional site
+    /** Use when {@code siteId} is required; avoids nullable-parameter issues on PostgreSQL. */
     @Query("SELECT a FROM Attendance a WHERE a.employee.id = :employeeId " +
            "AND a.date BETWEEN :startDate AND :endDate " +
-           "AND (:siteId IS NULL OR a.site.id = :siteId) " +
+           "AND a.site.id = :siteId " +
            "ORDER BY a.date DESC, a.time DESC")
-    Page<Attendance> findByEmployeeAndDateRangeAndSite(
+    Page<Attendance> findByEmployeeAndDateBetweenAndSiteId(
         @Param("employeeId") Long employeeId,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate,

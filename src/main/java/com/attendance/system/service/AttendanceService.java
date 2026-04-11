@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import static com.attendance.system.repository.AttendanceSpecifications.withAdminFilters;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -164,7 +166,7 @@ public class AttendanceService {
     public Page<AttendanceResponse> getAllAttendance(LocalDate date, Long employeeId, 
                                                       Long siteId, String jobCode, 
                                                       AttendanceStatus status, Pageable pageable) {
-        return attendanceRepository.findByFilters(date, employeeId, siteId, jobCode, status, pageable)
+        return attendanceRepository.findAll(withAdminFilters(date, employeeId, siteId, jobCode, status), pageable)
             .map(this::mapToAttendanceResponse);
     }
     
@@ -180,7 +182,7 @@ public class AttendanceService {
             .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
         
         if (siteId != null) {
-            return attendanceRepository.findByEmployeeAndDateRangeAndSite(
+            return attendanceRepository.findByEmployeeAndDateBetweenAndSiteId(
                 employeeId, startDate, endDate, siteId, pageable)
                 .map(this::mapToAttendanceResponse);
         } else {
