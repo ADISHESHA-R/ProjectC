@@ -194,7 +194,9 @@ public class UserService {
         if (q == null) {
             return userRepository.filterUsers(role, status, pageable).map(this::mapToUserResponse);
         }
-        return userRepository.searchUsers(q, role, status, pageable).map(this::mapToUserResponse);
+        String roleName = role == null ? null : role.name();
+        String statusName = status == null ? null : status.name();
+        return userRepository.searchUsers(q, roleName, statusName, pageable).map(this::mapToUserResponse);
     }
     
     public List<UserResponse> getAllEmployees() {

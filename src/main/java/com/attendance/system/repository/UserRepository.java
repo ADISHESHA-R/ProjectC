@@ -29,24 +29,26 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Text search: native SQL with CAST(... AS TEXT) so PostgreSQL applies LOWER() to text, not bytea.
+     * Role/status use String (enum names) so PostgreSQL compares varchar columns to varchar; binding
+     * enums in native queries can use ordinals (smallint) and cause type errors.
      */
     @Query(value = "SELECT u.* FROM users u WHERE " +
            "(LOWER(CAST(u.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(u.email AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(u.employee_id AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:role IS NULL OR u.role = :role) AND " +
-           "(:status IS NULL OR u.status = :status)",
+           "(CAST(:role AS VARCHAR) IS NULL OR u.role = CAST(:role AS VARCHAR)) AND " +
+           "(CAST(:status AS VARCHAR) IS NULL OR u.status = CAST(:status AS VARCHAR))",
            countQuery = "SELECT count(*) FROM users u WHERE " +
            "(LOWER(CAST(u.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(u.email AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(u.employee_id AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:role IS NULL OR u.role = :role) AND " +
-           "(:status IS NULL OR u.status = :status)",
+           "(CAST(:role AS VARCHAR) IS NULL OR u.role = CAST(:role AS VARCHAR)) AND " +
+           "(CAST(:status AS VARCHAR) IS NULL OR u.status = CAST(:status AS VARCHAR))",
            nativeQuery = true)
     Page<User> searchUsers(
         @Param("search") String search,
-        @Param("role") Role role,
-        @Param("status") UserStatus status,
+        @Param("role") String role,
+        @Param("status") String status,
         Pageable pageable);
     Optional<User> findByEmail(String email);
     Optional<User> findByEmployeeId(String employeeId);

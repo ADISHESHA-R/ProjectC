@@ -21,12 +21,12 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
            "(LOWER(CAST(s.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(s.job_code AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(COALESCE(s.address, '') AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:isActive IS NULL OR s.is_active = :isActive)",
+           "(CAST(:isActive AS BOOLEAN) IS NULL OR s.is_active = CAST(:isActive AS BOOLEAN))",
            countQuery = "SELECT count(*) FROM sites s WHERE " +
            "(LOWER(CAST(s.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(s.job_code AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(CAST(COALESCE(s.address, '') AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:isActive IS NULL OR s.is_active = :isActive)",
+           "(CAST(:isActive AS BOOLEAN) IS NULL OR s.is_active = CAST(:isActive AS BOOLEAN))",
            nativeQuery = true)
     Page<Site> searchSites(
         @Param("search") String search,
