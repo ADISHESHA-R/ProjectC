@@ -27,6 +27,8 @@ import com.attendance.system.service.FileStorageService;
 import com.attendance.system.service.NoticeService;
 import com.attendance.system.service.SiteService;
 import com.attendance.system.service.UserService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,6 +46,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -59,6 +62,7 @@ public class AdminController {
     private final NoticeService noticeService;
     private final FileStorageService fileStorageService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
     
     // ==================== DASHBOARD ====================
     @GetMapping("/dashboard")
@@ -244,15 +248,19 @@ public class AdminController {
     }
 
     @GetMapping("/sites")
-    @Operation(summary = "Get sites (search & filter)", description = "Paginated sites. Optional: search, isActive, page, size (Admin only).")
-    public ResponseEntity<ApiResponse<Page<SiteResponse>>> getAllSites(
+    @Operation(summary = "Get sites (search & filter)", description = "Paginated sites (Spring Page JSON). "
+            + "`content` holds the rows; `sites` is the same array for clients that expect a `sites` field (e.g. dropdowns). "
+            + "Optional: search, isActive, page, size (Admin only).")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllSites(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
         Page<SiteResponse> sites = siteService.searchSites(search, isActive, pageable);
-        return ResponseEntity.ok(ApiResponse.success(sites));
+        Map<String, Object> data = objectMapper.convertValue(sites, new TypeReference<Map<String, Object>>() { });
+        data.put("sites", sites.getContent());
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     /**
