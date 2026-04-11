@@ -8,6 +8,7 @@ import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,7 +66,9 @@ public class NoticeService {
         if (q == null) {
             return noticeRepository.filterNotices(pageable).map(this::mapToResponse);
         }
-        return noticeRepository.searchNotices(q, pageable).map(this::mapToResponse);
+        // Native SQL must not receive JPQL sort (updatedAt); PostgreSQL needs updated_at. ORDER BY is in SQL; use unsorted Pageable.
+        Pageable pageOnly = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        return noticeRepository.searchNotices(q, pageOnly).map(this::mapToResponse);
     }
 
     private NoticeResponse mapToResponse(Notice notice) {
