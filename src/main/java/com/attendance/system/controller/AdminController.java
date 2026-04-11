@@ -230,7 +230,19 @@ public class AdminController {
         SiteResponse site = siteService.createSite(request);
         return ResponseEntity.ok(ApiResponse.success("Site created successfully", site));
     }
-    
+
+    /**
+     * Same path as paginated GET /sites, but {@code data} is a JSON array (for dropdowns that expect a list).
+     * Example: {@code GET /api/admin/sites?list=true}. Optional {@code activeOnly=false} includes inactive sites.
+     */
+    @GetMapping(value = "/sites", params = "list=true")
+    @Operation(summary = "Sites as flat list (dropdowns)", description = "Returns data as an array. Use for Machinery site select; admin Sites table should use GET /sites without list=true.")
+    public ResponseEntity<ApiResponse<List<SiteResponse>>> getSitesList(
+            @RequestParam(required = false, defaultValue = "true") boolean activeOnly) {
+        List<SiteResponse> sites = activeOnly ? siteService.getActiveSites() : siteService.getAllSites();
+        return ResponseEntity.ok(ApiResponse.success(sites));
+    }
+
     @GetMapping("/sites")
     @Operation(summary = "Get sites (search & filter)", description = "Paginated sites. Optional: search, isActive, page, size (Admin only).")
     public ResponseEntity<ApiResponse<Page<SiteResponse>>> getAllSites(
