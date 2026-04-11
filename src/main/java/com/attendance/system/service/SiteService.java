@@ -12,6 +12,7 @@ import com.attendance.system.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -103,6 +104,13 @@ public class SiteService {
         return siteRepository.findAll().stream()
             .map(this::mapToSiteResponse)
             .collect(Collectors.toList());
+    }
+
+    /** All sites sorted by name — {@code GET /api/admin/sites} returns this as a JSON array in {@code data}. */
+    public List<SiteResponse> getAllSitesSortedByName() {
+        return siteRepository.findAll(Sort.by("name").ascending()).stream()
+                .map(this::mapToSiteResponse)
+                .collect(Collectors.toList());
     }
 
     public Page<SiteResponse> searchSites(String search, Boolean isActive, Pageable pageable) {

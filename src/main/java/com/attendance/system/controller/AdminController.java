@@ -27,8 +27,6 @@ import com.attendance.system.service.FileStorageService;
 import com.attendance.system.service.NoticeService;
 import com.attendance.system.service.SiteService;
 import com.attendance.system.service.UserService;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,7 +44,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -62,7 +59,6 @@ public class AdminController {
     private final NoticeService noticeService;
     private final FileStorageService fileStorageService;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
     
     // ==================== DASHBOARD ====================
     @GetMapping("/dashboard")
@@ -236,39 +232,29 @@ public class AdminController {
     }
 
     /**
-     * Same path as paginated GET /sites, but {@code data} is a JSON array (for dropdowns that expect a list).
-     * Example: {@code GET /api/admin/sites?list=true}. Optional {@code activeOnly=false} includes inactive sites.
+     * {@code data} is a JSON array (all sites, name order). For dropdowns / legacy clients.
+     * Paginated search/filter: {@code GET /api/admin/sites/paged}.
      */
-    @GetMapping(value = "/sites", params = "list=true")
-    @Operation(summary = "Sites as flat list (dropdowns)", description = "Returns data as an array. Use for Machinery site select; admin Sites table should use GET /sites without list=true.")
-    public ResponseEntity<ApiResponse<List<SiteResponse>>> getSitesList(
-            @RequestParam(required = false, defaultValue = "true") boolean activeOnly) {
-        List<SiteResponse> sites = activeOnly ? siteService.getActiveSites() : siteService.getAllSites();
-        return ResponseEntity.ok(ApiResponse.success(sites));
+    @GetMapping("/sites")
+    @Operation(summary = "List all sites (flat array)", description = "data is a JSON array. For Spring Page + search use GET /sites/paged.")
+    public ResponseEntity<ApiResponse<List<SiteResponse>>> getAllSites() {
+        return ResponseEntity.ok(ApiResponse.success(siteService.getAllSitesSortedByName()));
     }
 
-    @GetMapping("/sites")
-    @Operation(summary = "Get sites (search & filter)", description = "Paginated sites (Spring Page JSON). "
-            + "`content` holds the rows; `sites` is the same array for clients that expect a `sites` field (e.g. dropdowns). "
-            + "Optional: search, isActive, page, size (Admin only).")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllSites(
+    @GetMapping("/sites/paged")
+    @Operation(summary = "Sites (search & filter, paginated)", description = "Spring Page in data (content, totalElements, …).")
+    public ResponseEntity<ApiResponse<Page<SiteResponse>>> getSitesPaged(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
         Page<SiteResponse> sites = siteService.searchSites(search, isActive, pageable);
-        Map<String, Object> data = objectMapper.convertValue(sites, new TypeReference<Map<String, Object>>() { });
-        data.put("sites", sites.getContent());
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(sites));
     }
 
-    /**
-     * Flat list for select/dropdown UIs ({@code data} is a JSON array). Paginated table remains
-     * {@code GET /api/admin/sites}. Path {@code /site-options} avoids clashing with {@code /sites/{id}}.
-     */
     @GetMapping("/site-options")
-    @Operation(summary = "Active sites for dropdowns", description = "Active sites as data[] for Machinery and other admin selects. GET /sites is unchanged (paginated).")
+    @Operation(summary = "Active sites only (dropdowns)", description = "data[] = active sites. Full list: GET /sites.")
     public ResponseEntity<ApiResponse<List<SiteResponse>>> getSiteOptionsForSelect() {
         return ResponseEntity.ok(ApiResponse.success(siteService.getActiveSites()));
     }
