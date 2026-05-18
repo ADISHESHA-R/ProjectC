@@ -138,7 +138,7 @@ public class SiteJobDataService {
     @Transactional(readOnly = true)
     public List<SiteTechnicianDailyPaymentDto> getTechnicianPayments(Long siteId) {
         requireSite(siteId);
-        return technicianDailyPaymentRepository.findBySite_Id(siteId).stream()
+        return technicianDailyPaymentRepository.findBySite_IdOrderByPaymentDateAscTechnician_IdAsc(siteId).stream()
             .sorted(Comparator.comparing(SiteTechnicianDailyPayment::getPaymentDate)
                 .thenComparing(p -> p.getTechnician().getId())
                 .thenComparing(SiteTechnicianDailyPayment::getLineOrder, Comparator.nullsLast(Integer::compareTo))
