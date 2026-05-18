@@ -70,8 +70,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(publicFeedbackRateLimitFilter, JwtAuthenticationFilter.class)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // JWT must be registered first so addFilterBefore(..., JwtAuthenticationFilter.class) has an anchor order.
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(publicFeedbackRateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
@@ -101,8 +102,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(publicFeedbackRateLimitFilter, JwtAuthenticationFilter.class)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // Register JWT first (anchor), then rate-limit filter immediately before it on the chain.
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(publicFeedbackRateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 }
