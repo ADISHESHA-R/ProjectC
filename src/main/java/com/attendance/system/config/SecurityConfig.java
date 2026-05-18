@@ -1,6 +1,7 @@
 package com.attendance.system.config;
 
 import com.attendance.system.security.JwtAuthenticationFilter;
+import com.attendance.system.security.PublicFeedbackRateLimitFilter;
 import com.attendance.system.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final PublicFeedbackRateLimitFilter publicFeedbackRateLimitFilter;
     private final CorsConfigurationSource corsConfigurationSource;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
@@ -43,7 +45,8 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/api/auth/**"),
                     AntPathRequestMatcher.antMatcher("/api/users/**"),
                     AntPathRequestMatcher.antMatcher("/api/attendance/**"),
-                    AntPathRequestMatcher.antMatcher("/api/admin/**")
+                    AntPathRequestMatcher.antMatcher("/api/admin/**"),
+                    AntPathRequestMatcher.antMatcher("/api/public/**")
                 )
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
@@ -58,6 +61,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
                 .requestMatchers("/api/notices", "/api/notices/**").authenticated() // All authenticated users can view notices
@@ -66,6 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(publicFeedbackRateLimitFilter, JwtAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
@@ -87,6 +92,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/attendance/mark").hasRole("EMPLOYEE") // Only employees can mark attendance
                 .requestMatchers("/api/notices", "/api/notices/**").authenticated() // All authenticated users can view notices
@@ -95,6 +101,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/files/**").authenticated() // Allow authenticated users to access files
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(publicFeedbackRateLimitFilter, JwtAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

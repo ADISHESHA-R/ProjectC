@@ -4,17 +4,22 @@ import com.attendance.system.dto.request.ApproveAttendanceRequest;
 import com.attendance.system.dto.request.MarkAttendanceRequest;
 import com.attendance.system.dto.request.UpdateAttendanceShiftRequest;
 import com.attendance.system.dto.response.AttendanceCalendarResponse;
+import com.attendance.system.dto.response.AttendanceRegisterResponse;
 import com.attendance.system.dto.response.AttendanceResponse;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.dto.response.UserResponse;
 import com.attendance.system.entity.Attendance;
 import com.attendance.system.entity.Site;
+import com.attendance.system.entity.SiteAttendanceRegisterCell;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.AttendanceStatus;
+import com.attendance.system.enums.CertificateClientStatus;
+import com.attendance.system.enums.RegisterAttendanceCode;
 import com.attendance.system.enums.Role;
 import com.attendance.system.enums.Shift;
 import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.AttendanceRepository;
+import com.attendance.system.repository.SiteAttendanceRegisterCellRepository;
 import com.attendance.system.repository.SiteRepository;
 import com.attendance.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,6 +48,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
     private final SiteRepository siteRepository;
+    private final SiteAttendanceRegisterCellRepository siteAttendanceRegisterCellRepository;
     private final FileStorageService fileStorageService;
     
     @Transactional
@@ -266,6 +275,114 @@ public class AttendanceService {
         
         return summary;
     }
+
+    /**
+     * Builds an N-column register for a site using existing attendance approval status.
+     * Register codes: {@code P} = approved (present), {@code A} = rejected (absent), blank = pending / no mark.
+     *
+     * @param daysPerBlock number of consecutive calendar columns (default UI: 15); clamped to 1–366.
+     */
+    @Transactional(readOnly = true)
+    public AttendanceRegisterResponse getAttendanceRegister(
+        Long siteId,
+        LocalDate periodStart,
+        int blockIndex,
+        List<Long> employeeIds,
+        int daysPerBlock) {
+        Site site = siteRepository.findById(siteId)
+            .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
+
+        int n = Math.min(Math.max(daysPerBlock, 1), 366);
+
+        LocalDate base = periodStart != null ? periodStart
+            : (site.getSiteStartDate() != null ? site.getSiteStartDate() : LocalDate.now());
+        if (blockIndex < 0) {
+            blockIndex = 0;
+        }
+        LocalDate windowStart = base.plusDays((long) blockIndex * n);
+        LocalDate windowEnd = windowStart.plusDays(n - 1L);
+
+        List<LocalDate> dayDates = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            dayDates.add(windowStart.plusDays(i));
+        }
+
+        List<Attendance> raw = attendanceRepository.findBySiteIdAndDateBetweenOrderByDateAscTimeDesc(
+            siteId, windowStart, windowEnd);
+
+        Map<String, Attendance> best = new LinkedHashMap<>();
+        for (Attendance a : raw) {
+            String key = a.getEmployee().getId() + ":" + a.getDate();
+            best.merge(key, a, (x, y) -> x.getTime().isAfter(y.getTime()) ? x : y);
+        }
+
+        LinkedHashSet<Long> idSet = new LinkedHashSet<>();
+        if (employeeIds != null) {
+            for (Long eid : employeeIds) {
+                if (eid != null) {
+                    idSet.add(eid);
+                }
+            }
+        }
+        if (idSet.isEmpty()) {
+            for (Attendance a : raw) {
+                idSet.add(a.getEmployee().getId());
+            }
+        }
+
+        List<SiteAttendanceRegisterCell> overlay = siteAttendanceRegisterCellRepository
+            .findBySite_IdAndCalendarDayBetween(siteId, windowStart, windowEnd);
+        Map<String, RegisterAttendanceCode> cellOverride = new HashMap<>();
+        for (SiteAttendanceRegisterCell c : overlay) {
+            cellOverride.put(c.getEmployee().getId() + ":" + c.getCalendarDay(), c.getCode());
+        }
+
+        List<User> users = userRepository.findAllById(idSet);
+        users.sort(Comparator.comparing(User::getName, String.CASE_INSENSITIVE_ORDER));
+
+        List<AttendanceRegisterResponse.AttendanceRegisterRow> rows = new ArrayList<>();
+        int sl = 1;
+        for (User u : users) {
+            List<String> codes = new ArrayList<>();
+            for (LocalDate d : dayDates) {
+                RegisterAttendanceCode override = cellOverride.get(u.getId() + ":" + d);
+                if (override != null) {
+                    codes.add(override.name());
+                    continue;
+                }
+                Attendance att = best.get(u.getId() + ":" + d);
+                codes.add(att == null ? "" : registerCode(att.getStatus()));
+            }
+            rows.add(new AttendanceRegisterResponse.AttendanceRegisterRow(
+                sl++, u.getId(), u.getName(), codes));
+        }
+
+        return new AttendanceRegisterResponse(
+            site.getId(),
+            site.getJobCode(),
+            site.getCustomerName(),
+            site.getSiteStartDate(),
+            site.getSiteEndDate(),
+            site.getTotalProjectDays(),
+            site.getEstimatedDays(),
+            windowStart,
+            windowEnd,
+            blockIndex,
+            dayDates,
+            rows
+        );
+    }
+
+    private static String registerCode(AttendanceStatus status) {
+        if (status == null) {
+            return "";
+        }
+        return switch (status) {
+            case APPROVED -> "P";
+            case REJECTED -> "A";
+            case PENDING -> "";
+        };
+    }
     
     private AttendanceResponse mapToAttendanceResponse(Attendance attendance) {
         User employee = attendance.getEmployee();
@@ -301,6 +418,19 @@ public class AttendanceService {
                 site.getJobCode(),
                 site.getAddress(),
                 site.getIsActive(),
+                site.getCustomerName(),
+                site.getEstimatedDays(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                site.getSiteStartDate(),
+                site.getSiteEndDate(),
+                site.getTotalProjectDays(),
+                site.getCertificateClientStatus() != null
+                    ? site.getCertificateClientStatus() : CertificateClientStatus.NONE,
+                site.getCustomerFeedbackApprovedAt(),
                 site.getCreatedAt(),
                 site.getUpdatedAt()
             ),

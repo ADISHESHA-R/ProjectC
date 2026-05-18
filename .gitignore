@@ -42,6 +42,8 @@ application-*.local.yml
 .env
 .env.local
 .env.*.local
+# Local copy-paste of Render secrets (never commit)
+RENDER_ENV_VARS.md
 
 # Uploads directory
 uploads/*

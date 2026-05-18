@@ -85,4 +85,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long>, J
         @Param("employeeId") Long employeeId,
         @Param("year") int year,
         @Param("month") int month);
+
+    @Query("SELECT a FROM Attendance a WHERE a.site.id = :siteId AND a.date BETWEEN :start AND :end ORDER BY a.date ASC, a.time DESC")
+    List<Attendance> findBySiteIdAndDateBetweenOrderByDateAscTimeDesc(
+        @Param("siteId") Long siteId,
+        @Param("start") LocalDate start,
+        @Param("end") LocalDate end);
 }

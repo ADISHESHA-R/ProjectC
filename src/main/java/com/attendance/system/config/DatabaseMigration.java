@@ -27,6 +27,7 @@ public class DatabaseMigration {
             Thread.sleep(1000);
             migrateUsersTable();
             migrateSitesTable();
+            migrateJobSiteFlexibleRows();
             log.info("✅ Database migration completed successfully");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -197,7 +198,125 @@ public class DatabaseMigration {
             log.warn("Could not migrate sites table: {}", e.getMessage());
         }
     }
-    
+
+    /**
+     * Unbounded job-site rows: drop legacy unique constraints, add columns, backfill from old challenge_index.
+     */
+    private void migrateJobSiteFlexibleRows() {
+        try {
+            migrateSiteChallengeLinesForUnlimitedRows();
+            migrateTechnicianPaymentsAllowDuplicateDays();
+        } catch (Exception e) {
+            log.warn("Could not migrate job-site flexible row tables: {}", e.getMessage());
+        }
+    }
+
+    private static final String[] DEFAULT_CHALLENGE_HEAD_LABELS = {
+        "Transport", "Un-Loading", "Crane", "Entry Passes", "Safety Training", "Eqmt Set up",
+        "Work Front Delay", "Job Inspection", "Job Clearance", "Power", "Welding", "Coren Manpower",
+        "Eqmt Failure", "Tool Damage", "Non-Avlbty - Tools", "Customer Clearance", "Job related Issues",
+        "WCR", "Eqmt Despatch", "Work site Closed", "Work Timing Restriction", "Local Manpower Issue"
+    };
+
+    private void migrateSiteChallengeLinesForUnlimitedRows() {
+        String checkTable = """
+            SELECT table_name FROM information_schema.tables
+            WHERE LOWER(table_name) = LOWER('site_challenge_lines')
+            """;
+        if (jdbcTemplate.queryForList(checkTable).isEmpty()) {
+            return;
+        }
+        boolean hasChallengeIndex = columnExists("site_challenge_lines", "challenge_index");
+        boolean hasHeadLabel = columnExists("site_challenge_lines", "head_label");
+        boolean hasLineOrder = columnExists("site_challenge_lines", "line_order");
+        if (!hasHeadLabel) {
+            jdbcTemplate.execute(
+                "ALTER TABLE site_challenge_lines ADD COLUMN IF NOT EXISTS head_label VARCHAR(512)");
+        }
+        if (!hasLineOrder) {
+            jdbcTemplate.execute(
+                "ALTER TABLE site_challenge_lines ADD COLUMN IF NOT EXISTS line_order INTEGER");
+        }
+        if (hasChallengeIndex) {
+            jdbcTemplate.execute("""
+                UPDATE site_challenge_lines SET line_order = challenge_index
+                WHERE line_order IS NULL AND challenge_index IS NOT NULL
+                """);
+            for (int i = 1; i <= DEFAULT_CHALLENGE_HEAD_LABELS.length; i++) {
+                String label = DEFAULT_CHALLENGE_HEAD_LABELS[i - 1];
+                jdbcTemplate.update("""
+                    UPDATE site_challenge_lines SET head_label = ?
+                    WHERE challenge_index = ? AND (head_label IS NULL OR TRIM(head_label) = '')
+                    """, label, i);
+            }
+            jdbcTemplate.execute("""
+                UPDATE site_challenge_lines SET head_label = CONCAT('Challenge ', CAST(challenge_index AS VARCHAR(32)))
+                WHERE challenge_index IS NOT NULL AND (head_label IS NULL OR TRIM(head_label) = '')
+                """);
+            jdbcTemplate.execute("""
+                UPDATE site_challenge_lines SET head_label = ''
+                WHERE head_label IS NULL
+                """);
+            jdbcTemplate.execute("""
+                UPDATE site_challenge_lines SET line_order = 0
+                WHERE line_order IS NULL
+                """);
+        }
+        dropAllUniqueConstraintsExceptPk("site_challenge_lines");
+        if (hasChallengeIndex) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE site_challenge_lines DROP COLUMN IF EXISTS challenge_index");
+            } catch (Exception e) {
+                log.warn("Could not drop site_challenge_lines.challenge_index: {}", e.getMessage());
+            }
+        }
+        log.info("✅ site_challenge_lines migration for unlimited rows attempted");
+    }
+
+    private void migrateTechnicianPaymentsAllowDuplicateDays() {
+        String checkTable = """
+            SELECT table_name FROM information_schema.tables
+            WHERE LOWER(table_name) = LOWER('site_technician_daily_payments')
+            """;
+        if (jdbcTemplate.queryForList(checkTable).isEmpty()) {
+            return;
+        }
+        if (!columnExists("site_technician_daily_payments", "line_order")) {
+            jdbcTemplate.execute(
+                "ALTER TABLE site_technician_daily_payments ADD COLUMN IF NOT EXISTS line_order INTEGER NOT NULL DEFAULT 0");
+        }
+        dropAllUniqueConstraintsExceptPk("site_technician_daily_payments");
+        log.info("✅ site_technician_daily_payments: unique-per-day constraint removed if present");
+    }
+
+    private boolean columnExists(String tableName, String columnName) {
+        String sql = """
+            SELECT column_name FROM information_schema.columns
+            WHERE LOWER(table_name) = LOWER(?) AND LOWER(column_name) = LOWER(?)
+            """;
+        return !jdbcTemplate.queryForList(sql, tableName, columnName).isEmpty();
+    }
+
+    private void dropAllUniqueConstraintsExceptPk(String tableName) {
+        String sql = """
+            SELECT constraint_name FROM information_schema.table_constraints
+            WHERE LOWER(table_name) = LOWER(?) AND constraint_type = 'UNIQUE'
+            """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, tableName);
+        for (Map<String, Object> row : rows) {
+            Object nameObj = row.get("constraint_name");
+            if (nameObj == null) {
+                continue;
+            }
+            String cname = nameObj.toString();
+            try {
+                jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS \"" + cname + "\"");
+            } catch (Exception e) {
+                log.warn("Could not drop unique constraint {} on {}: {}", cname, tableName, e.getMessage());
+            }
+        }
+    }
+
     private void ensureColumnExists(String tableName, String columnName, String columnType) {
         try {
             String checkSql = """

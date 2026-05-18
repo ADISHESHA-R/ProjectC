@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,4 +36,10 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
     Optional<Site> findByJobCode(String jobCode);
     boolean existsByJobCode(String jobCode);
     Optional<Site> findByIdAndIsActiveTrue(Long id);
+
+    @Query("SELECT s FROM Site s LEFT JOIN FETCH s.inchargeUser LEFT JOIN FETCH s.locationSite WHERE s.id = :id")
+    Optional<Site> findByIdWithJobMeta(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT s FROM Site s LEFT JOIN FETCH s.inchargeUser LEFT JOIN FETCH s.locationSite ORDER BY s.name ASC")
+    List<Site> findAllWithJobMetaOrderByNameAsc();
 }

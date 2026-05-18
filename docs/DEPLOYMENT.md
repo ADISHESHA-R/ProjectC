@@ -1,0 +1,46 @@
+# Deployment notes — `ProjectC`
+
+## Build
+
+```bash
+mvn clean package -DskipTests
+java -jar target/attendance-backend-0.0.1-SNAPSHOT.jar
+```
+
+## Required environment (production / Render)
+
+| Variable | Purpose |
+|----------|---------|
+| `SPRING_PROFILES_ACTIVE` | `render` for PostgreSQL profile |
+| `DATABASE_URL` or `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL |
+| `JWT_SECRET` | ≥32 chars |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated frontend origins (optional) |
+| `JWT_EXPIRATION` | Optional |
+| `PUBLIC_FEEDBACK_TOKEN_VALID_DAYS` | Optional (default 30) |
+| `PUBLIC_FEEDBACK_RATE_LIMIT_PER_MINUTE` | Optional (default 120 requests/IP/minute on `/api/public/feedback/**`) |
+
+## Schema
+
+- Hibernate **`ddl-auto: update`** (local + current Render profile) applies JPA entity changes, including new **job-site** tables (`site_*`).
+- For strict production control, plan a follow-up: **Flyway** + `ddl-auto: validate`.
+
+## New admin APIs (job-site data)
+
+Base: `/api/admin/sites/{siteId}/…` (admin JWT).
+
+| Method | Path |
+|--------|------|
+| `PUT` | `/job-data/attendance-register-cells` — body `{ "cells": [ { "employeeUserId", "date", "code": "P"\|"A"\|"S"\|"HQ"\|"LS"\|"IN" \| null } ] }` |
+| `GET`/`PUT` | `/job-data/advance-expense-lines` |
+| `GET`/`PUT` | `/job-data/technician-payments` |
+| `GET`/`PUT` | `/job-data/tool-issues` |
+| `GET`/`PUT` | `/job-data/behaviour-report` — JSON body |
+| `GET`/`PUT` | `/job-data/challenge-lines` |
+| `GET` | `/api/meta/challenge-line-heads` — optional preset labels for challenge rows |
+
+`GET …/attendance-register` merges **Attendance** (P/A) with **register cell** overrides.
+
+## Public endpoints
+
+- `/api/public/feedback/**` — rate-limited filter, no JWT.
+- Prefer HTTPS and sensible token expiry.
