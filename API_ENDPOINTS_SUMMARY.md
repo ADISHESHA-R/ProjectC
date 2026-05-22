@@ -98,6 +98,8 @@
 | PUT | `/api/admin/attendance/{id}/approve` | ✅ | ADMIN | Approve/Reject attendance | `AttendanceResponse` |
 | DELETE | `/api/admin/attendance/{id}` | ✅ | ADMIN | Delete attendance | `{ success: true }` |
 
+**`AttendanceResponse` (attendance APIs):** includes `siteId`, `siteStartDate`, `siteEndDate` (copy of site boundaries), `photoPath` (storage key), and `photoUrl` plus `imageUrl` / `image` / `photo` (same URL as `photoUrl`) for `GET /api/files?path=...`. Set `API_PUBLIC_BASE_URL` when the SPA runs on another origin.
+
 **Filters for GET `/api/admin/attendance`:**
 - `date` - Filter by date (YYYY-MM-DD)
 - `employeeId` - Filter by employee ID

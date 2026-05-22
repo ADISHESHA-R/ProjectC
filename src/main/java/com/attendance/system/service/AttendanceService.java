@@ -50,6 +50,7 @@ public class AttendanceService {
     private final SiteRepository siteRepository;
     private final SiteAttendanceRegisterCellRepository siteAttendanceRegisterCellRepository;
     private final FileStorageService fileStorageService;
+    private final FileUrlService fileUrlService;
     
     @Transactional
     public AttendanceResponse markAttendance(Long employeeId, MarkAttendanceRequest request) {
@@ -387,60 +388,74 @@ public class AttendanceService {
     private AttendanceResponse mapToAttendanceResponse(Attendance attendance) {
         User employee = attendance.getEmployee();
         Site site = attendance.getSite();
-        
-        return new AttendanceResponse(
-            attendance.getId(),
-            new UserResponse(
-                employee.getId(),
-                employee.getEmployeeId(),
-                employee.getName(),
-                employee.getEmail(),
-                employee.getRole(),
-                employee.getStatus(),
-                employee.getAddress(),
-                employee.getDateOfBirth(),
-                employee.getBloodGroup(),
-                employee.getValidDocumentPath(),
-                employee.getEmployeeStatus(),
-                employee.getFatherName(),
-                employee.getDateOfJoining(),
-                employee.getOfficeContactNumber(),
-                employee.getHomeContactNumber(),
-                employee.getOtherContactNumber(),
-                employee.getIdentificationMark(),
-                employee.getSpecimenSignaturePath(),
-                employee.getPhotoPath(),
-                employee.getCreatedAt()
-            ),
-            new SiteResponse(
-                site.getId(),
-                site.getName(),
-                site.getJobCode(),
-                site.getAddress(),
-                site.getIsActive(),
-                site.getCustomerName(),
-                site.getEstimatedDays(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                site.getSiteStartDate(),
-                site.getSiteEndDate(),
-                site.getTotalProjectDays(),
-                site.getCertificateClientStatus() != null
-                    ? site.getCertificateClientStatus() : CertificateClientStatus.NONE,
-                site.getCustomerFeedbackApprovedAt(),
-                site.getCreatedAt(),
-                site.getUpdatedAt()
-            ),
-            attendance.getDate(),
-            attendance.getTime(),
-            attendance.getPhotoPath(),
-            attendance.getStatus(),
-            attendance.getRejectionReason(),
-            attendance.getShift() != null ? attendance.getShift() : Shift.FULL_DAY,
-            attendance.getCreatedAt()
+
+        SiteResponse siteResponse = new SiteResponse(
+            site.getId(),
+            site.getName(),
+            site.getJobCode(),
+            site.getAddress(),
+            site.getIsActive(),
+            site.getCustomerName(),
+            site.getEstimatedDays(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            site.getSiteStartDate(),
+            site.getSiteEndDate(),
+            site.getTotalProjectDays(),
+            site.getCertificateClientStatus() != null
+                ? site.getCertificateClientStatus() : CertificateClientStatus.NONE,
+            site.getCustomerFeedbackApprovedAt(),
+            site.getCreatedAt(),
+            site.getUpdatedAt()
         );
+
+        UserResponse employeeResponse = new UserResponse(
+            employee.getId(),
+            employee.getEmployeeId(),
+            employee.getName(),
+            employee.getEmail(),
+            employee.getRole(),
+            employee.getStatus(),
+            employee.getAddress(),
+            employee.getDateOfBirth(),
+            employee.getBloodGroup(),
+            employee.getValidDocumentPath(),
+            employee.getEmployeeStatus(),
+            employee.getFatherName(),
+            employee.getDateOfJoining(),
+            employee.getOfficeContactNumber(),
+            employee.getHomeContactNumber(),
+            employee.getOtherContactNumber(),
+            employee.getIdentificationMark(),
+            employee.getSpecimenSignaturePath(),
+            employee.getPhotoPath(),
+            employee.getCreatedAt()
+        );
+
+        String photoPath = attendance.getPhotoPath();
+        String photoUrl = fileUrlService.buildFilesUrl(photoPath);
+
+        AttendanceResponse r = new AttendanceResponse();
+        r.setId(attendance.getId());
+        r.setSiteId(site.getId());
+        r.setSiteStartDate(site.getSiteStartDate());
+        r.setSiteEndDate(site.getSiteEndDate());
+        r.setEmployee(employeeResponse);
+        r.setSite(siteResponse);
+        r.setDate(attendance.getDate());
+        r.setTime(attendance.getTime());
+        r.setPhotoPath(photoPath);
+        r.setPhotoUrl(photoUrl);
+        r.setImageUrl(photoUrl);
+        r.setImage(photoUrl);
+        r.setPhoto(photoUrl);
+        r.setStatus(attendance.getStatus());
+        r.setRejectionReason(attendance.getRejectionReason());
+        r.setShift(attendance.getShift() != null ? attendance.getShift() : Shift.FULL_DAY);
+        r.setCreatedAt(attendance.getCreatedAt());
+        return r;
     }
 }

@@ -1,7 +1,9 @@
 package com.attendance.system.dto.jobsite;
 
 import com.attendance.system.enums.SiteChallengeStatus;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -17,6 +19,8 @@ public class SiteChallengeLineDto {
      */
     private Integer challengeCatalogIndex;
     private LocalDate incidentDate;
+    /** JSON may use {@code involvedUserId} or {@code involvedEmployeeUserId}. */
+    @Setter(onMethod_ = @__({@JsonAlias({"involvedEmployeeUserId"})}))
     private Long involvedUserId;
     private String challengesFaced;
     private SiteChallengeStatus status;

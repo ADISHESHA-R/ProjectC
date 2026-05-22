@@ -1,6 +1,9 @@
 spring:
   application:
     name: attendance-system
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}  # Default to local (H2)
   datasource:
@@ -52,6 +55,10 @@ app:
   public-feedback-token-valid-days: ${PUBLIC_FEEDBACK_TOKEN_VALID_DAYS:30}
   public-feedback-rate-limit-per-minute: ${PUBLIC_FEEDBACK_RATE_LIMIT_PER_MINUTE:120}
 
+  # HTTP Cache-Control for GET /api/meta/** (seconds, clamped 60–86400 server-side)
+  http:
+    meta-cache-max-age-seconds: ${META_CACHE_MAX_AGE_SECONDS:300}
+
   # CORS: optional comma-separated origins for dev/prod (e.g. https://myapp.vercel.app). If not set, localhost origins are used.
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
@@ -59,3 +66,6 @@ app:
   file:
     upload-dir: ${UPLOAD_DIR:./uploads}
     max-size: 5242880  # 5MB in bytes for documents
+
+  # Optional origin for absolute file URLs in JSON (e.g. https://api.mycompany.com). Leave unset for root-relative /api/files?...
+  api-public-base-url: ${API_PUBLIC_BASE_URL:}

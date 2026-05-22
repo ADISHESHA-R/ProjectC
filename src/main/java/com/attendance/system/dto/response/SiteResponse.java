@@ -1,6 +1,7 @@
 package com.attendance.system.dto.response;
 
 import com.attendance.system.enums.CertificateClientStatus;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,7 +26,9 @@ public class SiteResponse {
     private String inchargeEmployeeId;
     private Long locationSiteId;
     private String locationSiteLabel;
+    @JsonAlias({"projectStartDate"})
     private LocalDate siteStartDate;
+    @JsonAlias({"projectEndDate"})
     private LocalDate siteEndDate;
     private Integer totalProjectDays;
 
