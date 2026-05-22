@@ -26,10 +26,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import static com.attendance.system.repository.AttendanceSpecifications.withAdminFilters;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -41,6 +45,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Attendance photos: bytes live on disk (see {@link FileStorageService}); DB stores {@code photoPath} only.
+ * Mark flow: write file to disk, register rollback deletion for that path, then {@code save} the row.
+ * Resubmit (REJECTED): same for the new file; schedule deletion of the previous path only after commit.
+ */
 @Service
 @RequiredArgsConstructor
 public class AttendanceService {
@@ -75,43 +84,36 @@ public class AttendanceService {
             if (existing.getStatus() == AttendanceStatus.PENDING) {
                 throw new RuntimeException("Attendance pending for this day at this site. Cannot resubmit.");
             }
-            // REJECTED -> allow resubmit: update existing record
-            try {
-                try {
-                    fileStorageService.deleteFile(existing.getPhotoPath());
-                } catch (Exception e) {
-                    // ignore if old file missing
-                }
-                String photoPath = fileStorageService.storeFile(request.getPhoto(), employeeId);
-                existing.setPhotoPath(photoPath);
-                existing.setTime(LocalTime.now());
-                existing.setShift(request.getShift());
-                existing.setStatus(AttendanceStatus.PENDING);
-                existing.setRejectionReason(null);
-                existing = attendanceRepository.save(existing);
-                return mapToAttendanceResponse(existing);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to resubmit attendance: " + e.getMessage());
+            // REJECTED -> resubmit: new file on disk first, DB update in same transaction; old file removed after commit
+            final String oldPath = existing.getPhotoPath();
+            String newPath = storeAttendancePhotoOrFail(request.getPhoto(), employeeId);
+            scheduleDeleteFileOnRollback(newPath);
+            existing.setPhotoPath(newPath);
+            existing.setTime(LocalTime.now());
+            existing.setShift(request.getShift());
+            existing.setStatus(AttendanceStatus.PENDING);
+            existing.setRejectionReason(null);
+            existing = attendanceRepository.save(existing);
+            if (oldPath != null && !oldPath.isBlank() && !oldPath.equals(newPath)) {
+                scheduleDeleteFileAfterCommit(oldPath);
             }
+            return mapToAttendanceResponse(existing);
         }
-        
-        try {
-            String photoPath = fileStorageService.storeFile(request.getPhoto(), employeeId);
-            
-            Attendance attendance = new Attendance();
-            attendance.setEmployee(employee);
-            attendance.setSite(site);
-            attendance.setDate(today);
-            attendance.setTime(LocalTime.now());
-            attendance.setPhotoPath(photoPath);
-            attendance.setStatus(AttendanceStatus.PENDING);
-            attendance.setShift(request.getShift());
-            
-            attendance = attendanceRepository.save(attendance);
-            return mapToAttendanceResponse(attendance);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to mark attendance: " + e.getMessage());
-        }
+
+        String photoPath = storeAttendancePhotoOrFail(request.getPhoto(), employeeId);
+        scheduleDeleteFileOnRollback(photoPath);
+
+        Attendance attendance = new Attendance();
+        attendance.setEmployee(employee);
+        attendance.setSite(site);
+        attendance.setDate(today);
+        attendance.setTime(LocalTime.now());
+        attendance.setPhotoPath(photoPath);
+        attendance.setStatus(AttendanceStatus.PENDING);
+        attendance.setShift(request.getShift());
+
+        attendance = attendanceRepository.save(attendance);
+        return mapToAttendanceResponse(attendance);
     }
     
     @Transactional
@@ -143,22 +145,72 @@ public class AttendanceService {
     public void deleteAttendance(Long id) {
         Attendance attendance = attendanceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Attendance", id));
-        
-        try {
-            fileStorageService.deleteFile(attendance.getPhotoPath());
-        } catch (Exception e) {
-            System.err.println("Failed to delete photo file: " + e.getMessage());
-        }
-        
+        String photoPath = attendance.getPhotoPath();
         attendanceRepository.delete(attendance);
+        scheduleDeleteFileAfterCommit(photoPath);
+    }
+
+    /** Remove orphaned upload if the transaction rolls back after the file was written. */
+    private void scheduleDeleteFileOnRollback(String path) {
+        if (path == null || path.isBlank() || !TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        final String p = path.trim();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                    try {
+                        fileStorageService.deleteFile(p);
+                    } catch (Exception ignored) {
+                        // best-effort cleanup
+                    }
+                }
+            }
+        });
+    }
+
+    /** Delete replaced or removed file only after DB commit succeeds. */
+    private void scheduleDeleteFileAfterCommit(String path) {
+        if (path == null || path.isBlank() || !TransactionSynchronizationManager.isSynchronizationActive()) {
+            if (path != null && !path.isBlank()) {
+                try {
+                    fileStorageService.deleteFile(path.trim());
+                } catch (Exception e) {
+                    System.err.println("Failed to delete attendance photo file: " + e.getMessage());
+                }
+            }
+            return;
+        }
+        final String p = path.trim();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    fileStorageService.deleteFile(p);
+                } catch (Exception e) {
+                    System.err.println("Failed to delete attendance photo file: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    private String storeAttendancePhotoOrFail(MultipartFile file, Long employeeId) {
+        try {
+            return fileStorageService.storeFile(file, employeeId);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store attendance photo: " + e.getMessage(), e);
+        }
     }
     
+    @Transactional(readOnly = true)
     public AttendanceResponse getAttendanceById(Long id) {
         Attendance attendance = attendanceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Attendance", id));
         return mapToAttendanceResponse(attendance);
     }
     
+    @Transactional(readOnly = true)
     public Page<AttendanceResponse> getEmployeeAttendance(Long employeeId, Pageable pageable) {
         User employee = userRepository.findById(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
@@ -166,6 +218,7 @@ public class AttendanceService {
             .map(this::mapToAttendanceResponse);
     }
     
+    @Transactional(readOnly = true)
     public Page<AttendanceResponse> getSiteAttendance(Long siteId, Pageable pageable) {
         Site site = siteRepository.findById(siteId)
             .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
@@ -173,6 +226,7 @@ public class AttendanceService {
             .map(this::mapToAttendanceResponse);
     }
     
+    @Transactional(readOnly = true)
     public Page<AttendanceResponse> getAllAttendance(LocalDate date, Long employeeId, 
                                                       Long siteId, String jobCode, 
                                                       AttendanceStatus status, Pageable pageable) {
@@ -181,6 +235,7 @@ public class AttendanceService {
     }
     
     // Get attendance by date range
+    @Transactional(readOnly = true)
     public Page<AttendanceResponse> getEmployeeAttendanceByDateRange(
             Long employeeId, 
             LocalDate startDate, 
@@ -203,6 +258,7 @@ public class AttendanceService {
     }
     
     // Get attendance by specific date
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getEmployeeAttendanceByDate(
             Long employeeId, 
             LocalDate date) {
@@ -216,6 +272,7 @@ public class AttendanceService {
     }
     
     // Get calendar view (all dates with attendance)
+    @Transactional(readOnly = true)
     public AttendanceCalendarResponse getEmployeeAttendanceCalendar(Long employeeId) {
         // Verify employee exists
         userRepository.findById(employeeId)
@@ -249,6 +306,7 @@ public class AttendanceService {
     }
     
     // Get attendance summary by month
+    @Transactional(readOnly = true)
     public Map<String, Object> getEmployeeAttendanceSummary(Long employeeId, int year, int month) {
         // Verify employee exists
         userRepository.findById(employeeId)

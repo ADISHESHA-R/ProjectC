@@ -37,7 +37,11 @@ public class Attendance {
     @Column(nullable = false)
     private LocalTime time;
 
-    @Column(name = "photo_path", nullable = false)
+    /**
+     * Storage key only (filename or relative path under the configured upload root), never image bytes.
+     * Served via {@code GET /api/files?path=...}; do not map photos as {@code @Lob} / {@code byte[]}.
+     */
+    @Column(name = "photo_path", nullable = false, length = 512)
     private String photoPath;
 
     @Enumerated(EnumType.STRING)
