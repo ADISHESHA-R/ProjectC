@@ -22,7 +22,8 @@ public class CorsConfig {
             "http://localhost:8080",
             "http://127.0.0.1:3000",
             "http://127.0.0.1:5173",
-            "https://corem-frontend.onrender.com"
+            "https://corem-frontend.onrender.com",
+            "https://coren-wzg3.onrender.com"
     );
 
     @Value("${app.cors.allowed-origins:}")

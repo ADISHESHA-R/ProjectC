@@ -20,15 +20,10 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     
     private final AuthService authService;
-    
-    // Single login (any role) - commented out; use /admin/login or /employee/login instead
-    // @PostMapping("/login")
-    // @Operation(summary = "User login", description = "Login with email and password (any role)")
-    // public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-    //     AuthResponse response = authService.login(request);
-    //     return ResponseEntity.ok(ApiResponse.success("Login successful", response));
-    // }
-    
+
+    /**
+     * Authentication uses role-specific endpoints only — there is no generic {@code POST /api/auth/login}.
+     */
     @PostMapping("/admin/login")
     @Operation(summary = "Admin login", description = "Login for admin only. Returns 400 if user is not ADMIN.")
     public ResponseEntity<ApiResponse<AuthResponse>> adminLogin(@Valid @RequestBody LoginRequest request) {

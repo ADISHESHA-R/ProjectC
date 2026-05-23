@@ -20,11 +20,14 @@ Admin endpoints require header: `Authorization: Bearer <accessToken>` (from logi
 
 | Method | URL | Description |
 |--------|-----|-------------|
-| POST | `/api/auth/login` | Login with email and password |
+| POST | `/api/auth/admin/login` | Admin login (email + password; user must be `ADMIN`) |
+| POST | `/api/auth/employee/login` | Employee login (email + password; user must be `EMPLOYEE`) |
 | POST | `/api/auth/refresh` | Refresh access token |
 | POST | `/api/auth/logout` | Logout and revoke refresh token |
 
-### POST `/api/auth/login`
+There is **no** generic `POST /api/auth/login` — use the role-specific URL above.
+
+### POST `/api/auth/admin/login`
 
 **Request body:**
 ```json
@@ -47,6 +50,12 @@ Admin endpoints require header: `Authorization: Bearer <accessToken>` (from logi
   }
 }
 ```
+
+### POST `/api/auth/employee/login`
+
+Same request body shape as admin login; returns `400` / error message if the account is not an employee.
+
+**Sample output:** Same `data` shape as admin login (`accessToken`, `refreshToken`, `tokenType`, `expiresIn`).
 
 ### POST `/api/auth/refresh`
 
@@ -440,7 +449,8 @@ Or for reject: `"status": "REJECTED"`, `"rejectionReason": "Reason text"`.
 
 | Method | URL | Auth | Description |
 |--------|-----|------|-------------|
-| POST | `/api/auth/login` | No | Login |
+| POST | `/api/auth/admin/login` | No | Admin login |
+| POST | `/api/auth/employee/login` | No | Employee login |
 | POST | `/api/auth/refresh` | No | Refresh token |
 | POST | `/api/auth/logout` | No | Logout |
 | GET | `/api/users/me` | Yes | Current user |

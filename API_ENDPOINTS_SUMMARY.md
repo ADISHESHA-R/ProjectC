@@ -14,7 +14,8 @@
 
 | Method | Endpoint | Description | Response |
 |--------|----------|-------------|----------|
-| POST | `/api/auth/login` | Login (Admin or Employee) | `{ accessToken, refreshToken, tokenType, expiresIn }` |
+| POST | `/api/auth/admin/login` | Admin login only (`ADMIN` role) | `{ accessToken, refreshToken, tokenType, expiresIn }` |
+| POST | `/api/auth/employee/login` | Employee login only (`EMPLOYEE` role) | `{ accessToken, refreshToken, tokenType, expiresIn }` |
 | POST | `/api/auth/refresh` | Refresh access token | `{ accessToken, refreshToken, tokenType, expiresIn }` |
 | POST | `/api/auth/logout` | Logout | `{ success: true, message: "Logout successful" }` |
 
@@ -184,7 +185,7 @@ All endpoints return:
 
 1. **Admin Login:**
    ```
-   POST /api/auth/login
+   POST /api/auth/admin/login
    { "email": "admin@attendance.com", "password": "admin123" }
    → Store adminAccessToken
    ```
@@ -199,7 +200,7 @@ All endpoints return:
 
 3. **Employee Login:**
    ```
-   POST /api/auth/login
+   POST /api/auth/employee/login
    { "email": "employee@example.com", "password": "password123" }
    → Store employeeAccessToken
    ```
