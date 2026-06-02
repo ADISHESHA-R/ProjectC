@@ -77,6 +77,7 @@ public class SiteJobDataService {
     private final SiteBehaviourReportRepository behaviourReportRepository;
     private final SiteChallengeLineRepository challengeLineRepository;
     private final SiteAttendanceRegisterCellRepository attendanceRegisterCellRepository;
+    private final SiteEquipmentService siteEquipmentService;
 
     private Site requireSite(Long siteId) {
         return siteRepository.findById(siteId)
@@ -333,6 +334,7 @@ public class SiteJobDataService {
     /** Delete all normalized job-site rows for a site (before deleting the site). */
     @Transactional
     public void deleteAllJobData(Long siteId) {
+        siteEquipmentService.deleteAllForSite(siteId);
         attendanceRegisterCellRepository.deleteBySite_Id(siteId);
         advanceExpenseLineRepository.deleteBySite_Id(siteId);
         technicianDailyPaymentRepository.deleteBySite_Id(siteId);

@@ -1,0 +1,2634 @@
+{
+  "info": {
+    "name": "Attendance System API (ProjectC)",
+    "description": "Import: Postman → Import → Raw text (paste file contents) or File.\nSet collection variables: `baseUrl` (default http://localhost:8080), `accessToken`, `refreshToken`, `publicFeedbackToken`, `siteId`, `userId`, `attendanceId`.\nAuth: most requests need `Authorization: Bearer {{accessToken}}` (saved on folder).\nBinary responses: GET /api/files, POST /api/public/feedback/{token}/approve (PDF).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "publicFeedbackToken",
+      "value": ""
+    },
+    {
+      "key": "siteId",
+      "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "attendanceId",
+      "value": "10"
+    },
+    {
+      "key": "employeeId",
+      "value": "EMP001"
+    },
+    {
+      "key": "jobCode",
+      "value": "JOB-001"
+    },
+    {
+      "key": "filePath",
+      "value": "uploads/photos/1.jpg"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Auth (no token)",
+      "item": [
+        {
+          "name": "POST Admin login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/admin/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"accessToken\": \"<jwt>\",\n    \"refreshToken\": \"<jwt>\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Employee login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/employee/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employee@example.com\",\n  \"password\": \"your-password\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"accessToken\": \"<jwt>\",\n    \"refreshToken\": \"<jwt>\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Token refreshed\",\n  \"data\": {\n    \"accessToken\": \"<jwt>\",\n    \"refreshToken\": \"<jwt>\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Logout successful\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Auth home / warmup",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/home"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Restart...\",\n  \"data\": \"Avoid cold start by returning a simple message\"\n}"
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "2. Public feedback (no token)",
+      "item": [
+        {
+          "name": "GET Public feedback context",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/feedback/{{publicFeedbackToken}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"jobCode\": \"JOB-001\",\n    \"customerName\": \"Acme Ltd\",\n    \"companyNameHint\": \"Hint\",\n    \"certificateClientStatus\": \"NONE\",\n    \"expired\": false,\n    \"revoked\": false\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Submit customer feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/public/feedback/{{publicFeedbackToken}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane\",\n  \"email\": \"jane@client.com\",\n  \"phone\": \"+1\",\n  \"companyName\": \"Acme\",\n  \"productQuality\": \"Good\",\n  \"customerService\": \"Good\",\n  \"machiningQuality\": \"Good\",\n  \"pricing\": \"Fair\",\n  \"shippingDelivery\": \"On time\",\n  \"otherCategoryNote\": \"\",\n  \"specificFeedback\": \"Great work\",\n  \"suggestions\": \"\",\n  \"likelihoodRecommend\": 9,\n  \"additionalComments\": \"\",\n  \"extra\": {\n    \"customField\": \"value\"\n  }\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Feedback saved\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Approve certificate (returns PDF binary)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/public/feedback/{{publicFeedbackToken}}/approve"
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "3. Meta",
+      "item": [
+        {
+          "name": "GET Designations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/meta/designations"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"code\": \"TECH\",\n      \"label\": \"Technician\",\n      \"sortOrder\": 10\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Challenge line heads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/meta/challenge-line-heads"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"index\": 1,\n      \"label\": \"Safety\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Sites (read)",
+      "item": [
+        {
+          "name": "GET All sites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/sites"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Active sites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/sites/active"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Site by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/sites/{{siteId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Site by job code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/sites/job-code/{{jobCode}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Notices",
+      "item": [
+        {
+          "name": "GET All notices (employees)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/notices"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"message\": \"Holiday notice\",\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Files (binary response)",
+      "item": [
+        {
+          "name": "GET Download file",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files?path={{filePath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "path",
+                  "value": "{{filePath}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Users",
+      "item": [
+        {
+          "name": "GET Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/me"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Me",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"me@example.com\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Profile updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Me photo (multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/users/me/photo"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Photo uploaded successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Me signature (multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/users/me/signature"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Signature uploaded successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Users paged",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users?page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 1,\n        \"employeeId\": \"EMP001\",\n        \"name\": \"Ravi Kumar\",\n        \"email\": \"ravi@example.com\",\n        \"role\": \"EMPLOYEE\",\n        \"status\": \"ACTIVE\",\n        \"address\": \"123 Street\",\n        \"dateOfBirth\": \"1990-05-01\",\n        \"bloodGroup\": \"A_POSITIVE\",\n        \"validDocumentPath\": null,\n        \"employeeStatus\": \"ACTIVE\",\n        \"fatherName\": \"Father Name\",\n        \"dateOfJoining\": \"2024-01-15\",\n        \"officeContactNumber\": \"+911234567890\",\n        \"homeContactNumber\": null,\n        \"otherContactNumber\": null,\n        \"identificationMark\": null,\n        \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n        \"photoPath\": \"uploads/photos/1.jpg\",\n        \"createdAt\": \"2026-01-01T10:00:00\"\n      }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1,\n    \"size\": 10,\n    \"number\": 0,\n    \"first\": true,\n    \"last\": true,\n    \"empty\": false\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET User by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/{{userId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT User by id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin update\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Attendance",
+      "item": [
+        {
+          "name": "POST Mark attendance (multipart, EMPLOYEE)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "siteId",
+                  "type": "text",
+                  "value": "{{siteId}}"
+                },
+                {
+                  "key": "shift",
+                  "type": "text",
+                  "value": "FULL_DAY"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/attendance/mark"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Attendance marked successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"employee\": {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    },\n    \"site\": {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    },\n    \"date\": \"2026-05-20\",\n    \"time\": \"09:15:00\",\n    \"photoPath\": \"uploads/attendance/10.jpg\",\n    \"status\": \"PENDING\",\n    \"rejectionReason\": null,\n    \"shift\": \"FULL_DAY\",\n    \"createdAt\": \"2026-05-20T09:15:01\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET My attendance (paged)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attendance/my-attendance?page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 10,\n        \"employee\": {\n          \"id\": 1,\n          \"employeeId\": \"EMP001\",\n          \"name\": \"Ravi Kumar\",\n          \"email\": \"ravi@example.com\",\n          \"role\": \"EMPLOYEE\",\n          \"status\": \"ACTIVE\",\n          \"address\": \"123 Street\",\n          \"dateOfBirth\": \"1990-05-01\",\n          \"bloodGroup\": \"A_POSITIVE\",\n          \"validDocumentPath\": null,\n          \"employeeStatus\": \"ACTIVE\",\n          \"fatherName\": \"Father Name\",\n          \"dateOfJoining\": \"2024-01-15\",\n          \"officeContactNumber\": \"+911234567890\",\n          \"homeContactNumber\": null,\n          \"otherContactNumber\": null,\n          \"identificationMark\": null,\n          \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n          \"photoPath\": \"uploads/photos/1.jpg\",\n          \"createdAt\": \"2026-01-01T10:00:00\"\n        },\n        \"site\": {\n          \"id\": 1,\n          \"name\": \"Site Alpha\",\n          \"jobCode\": \"JOB-001\",\n          \"address\": \"Industrial Area\",\n          \"isActive\": true,\n          \"customerName\": \"Acme Ltd\",\n          \"estimatedDays\": 30,\n          \"inchargeUserId\": 2,\n          \"inchargeName\": \"Lead User\",\n          \"inchargeEmployeeId\": \"EMP002\",\n          \"locationSiteId\": null,\n          \"locationSiteLabel\": null,\n          \"siteStartDate\": \"2026-01-01\",\n          \"siteEndDate\": \"2026-01-31\",\n          \"totalProjectDays\": 31,\n          \"certificateClientStatus\": \"NONE\",\n          \"customerFeedbackApprovedAt\": null,\n          \"createdAt\": \"2026-01-01T08:00:00\",\n          \"updatedAt\": \"2026-01-01T08:00:00\"\n        },\n        \"date\": \"2026-05-20\",\n        \"time\": \"09:15:00\",\n        \"photoPath\": \"uploads/attendance/10.jpg\",\n        \"status\": \"PENDING\",\n        \"rejectionReason\": null,\n        \"shift\": \"FULL_DAY\",\n        \"createdAt\": \"2026-05-20T09:15:01\"\n      }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1,\n    \"size\": 10,\n    \"number\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Attendance by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attendance/{{attendanceId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 10,\n    \"employee\": {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    },\n    \"site\": {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    },\n    \"date\": \"2026-05-20\",\n    \"time\": \"09:15:00\",\n    \"photoPath\": \"uploads/attendance/10.jpg\",\n    \"status\": \"PENDING\",\n    \"rejectionReason\": null,\n    \"shift\": \"FULL_DAY\",\n    \"createdAt\": \"2026-05-20T09:15:01\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET My attendance by date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attendance/my-attendance/date?date=2026-05-20"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 10,\n      \"employee\": {\n        \"id\": 1,\n        \"employeeId\": \"EMP001\",\n        \"name\": \"Ravi Kumar\",\n        \"email\": \"ravi@example.com\",\n        \"role\": \"EMPLOYEE\",\n        \"status\": \"ACTIVE\",\n        \"address\": \"123 Street\",\n        \"dateOfBirth\": \"1990-05-01\",\n        \"bloodGroup\": \"A_POSITIVE\",\n        \"validDocumentPath\": null,\n        \"employeeStatus\": \"ACTIVE\",\n        \"fatherName\": \"Father Name\",\n        \"dateOfJoining\": \"2024-01-15\",\n        \"officeContactNumber\": \"+911234567890\",\n        \"homeContactNumber\": null,\n        \"otherContactNumber\": null,\n        \"identificationMark\": null,\n        \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n        \"photoPath\": \"uploads/photos/1.jpg\",\n        \"createdAt\": \"2026-01-01T10:00:00\"\n      },\n      \"site\": {\n        \"id\": 1,\n        \"name\": \"Site Alpha\",\n        \"jobCode\": \"JOB-001\",\n        \"address\": \"Industrial Area\",\n        \"isActive\": true,\n        \"customerName\": \"Acme Ltd\",\n        \"estimatedDays\": 30,\n        \"inchargeUserId\": 2,\n        \"inchargeName\": \"Lead User\",\n        \"inchargeEmployeeId\": \"EMP002\",\n        \"locationSiteId\": null,\n        \"locationSiteLabel\": null,\n        \"siteStartDate\": \"2026-01-01\",\n        \"siteEndDate\": \"2026-01-31\",\n        \"totalProjectDays\": 31,\n        \"certificateClientStatus\": \"NONE\",\n        \"customerFeedbackApprovedAt\": null,\n        \"createdAt\": \"2026-01-01T08:00:00\",\n        \"updatedAt\": \"2026-01-01T08:00:00\"\n      },\n      \"date\": \"2026-05-20\",\n      \"time\": \"09:15:00\",\n      \"photoPath\": \"uploads/attendance/10.jpg\",\n      \"status\": \"PENDING\",\n      \"rejectionReason\": null,\n      \"shift\": \"FULL_DAY\",\n      \"createdAt\": \"2026-05-20T09:15:01\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET My attendance by range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attendance/my-attendance/range?startDate=2026-05-01&endDate=2026-05-31&page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 10,\n        \"employee\": {\n          \"id\": 1,\n          \"employeeId\": \"EMP001\",\n          \"name\": \"Ravi Kumar\",\n          \"email\": \"ravi@example.com\",\n          \"role\": \"EMPLOYEE\",\n          \"status\": \"ACTIVE\",\n          \"address\": \"123 Street\",\n          \"dateOfBirth\": \"1990-05-01\",\n          \"bloodGroup\": \"A_POSITIVE\",\n          \"validDocumentPath\": null,\n          \"employeeStatus\": \"ACTIVE\",\n          \"fatherName\": \"Father Name\",\n          \"dateOfJoining\": \"2024-01-15\",\n          \"officeContactNumber\": \"+911234567890\",\n          \"homeContactNumber\": null,\n          \"otherContactNumber\": null,\n          \"identificationMark\": null,\n          \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n          \"photoPath\": \"uploads/photos/1.jpg\",\n          \"createdAt\": \"2026-01-01T10:00:00\"\n        },\n        \"site\": {\n          \"id\": 1,\n          \"name\": \"Site Alpha\",\n          \"jobCode\": \"JOB-001\",\n          \"address\": \"Industrial Area\",\n          \"isActive\": true,\n          \"customerName\": \"Acme Ltd\",\n          \"estimatedDays\": 30,\n          \"inchargeUserId\": 2,\n          \"inchargeName\": \"Lead User\",\n          \"inchargeEmployeeId\": \"EMP002\",\n          \"locationSiteId\": null,\n          \"locationSiteLabel\": null,\n          \"siteStartDate\": \"2026-01-01\",\n          \"siteEndDate\": \"2026-01-31\",\n          \"totalProjectDays\": 31,\n          \"certificateClientStatus\": \"NONE\",\n          \"customerFeedbackApprovedAt\": null,\n          \"createdAt\": \"2026-01-01T08:00:00\",\n          \"updatedAt\": \"2026-01-01T08:00:00\"\n        },\n        \"date\": \"2026-05-20\",\n        \"time\": \"09:15:00\",\n        \"photoPath\": \"uploads/attendance/10.jpg\",\n        \"status\": \"PENDING\",\n        \"rejectionReason\": null,\n        \"shift\": \"FULL_DAY\",\n        \"createdAt\": \"2026-05-20T09:15:01\"\n      }\n    ],\n    \"totalElements\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET My attendance calendar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attendance/my-attendance/calendar"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"attendanceDates\": [\n      {\n        \"date\": \"2026-05-01\",\n        \"hasAttendance\": true,\n        \"attendanceId\": 10,\n        \"siteName\": \"Site Alpha\",\n        \"jobCode\": \"JOB-001\",\n        \"status\": \"APPROVED\",\n        \"shift\": \"FULL_DAY\"\n      }\n    ],\n    \"totalDays\": 1,\n    \"attendedDays\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET My attendance summary (month)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/attendance/my-attendance/summary?year=2026&month=5"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"year\": 2026,\n    \"month\": 5,\n    \"totalDays\": 31,\n    \"attendedDays\": 18,\n    \"attendanceList\": [\n      {\n        \"id\": 10,\n        \"employee\": {\n          \"id\": 1,\n          \"employeeId\": \"EMP001\",\n          \"name\": \"Ravi Kumar\",\n          \"email\": \"ravi@example.com\",\n          \"role\": \"EMPLOYEE\",\n          \"status\": \"ACTIVE\",\n          \"address\": \"123 Street\",\n          \"dateOfBirth\": \"1990-05-01\",\n          \"bloodGroup\": \"A_POSITIVE\",\n          \"validDocumentPath\": null,\n          \"employeeStatus\": \"ACTIVE\",\n          \"fatherName\": \"Father Name\",\n          \"dateOfJoining\": \"2024-01-15\",\n          \"officeContactNumber\": \"+911234567890\",\n          \"homeContactNumber\": null,\n          \"otherContactNumber\": null,\n          \"identificationMark\": null,\n          \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n          \"photoPath\": \"uploads/photos/1.jpg\",\n          \"createdAt\": \"2026-01-01T10:00:00\"\n        },\n        \"site\": {\n          \"id\": 1,\n          \"name\": \"Site Alpha\",\n          \"jobCode\": \"JOB-001\",\n          \"address\": \"Industrial Area\",\n          \"isActive\": true,\n          \"customerName\": \"Acme Ltd\",\n          \"estimatedDays\": 30,\n          \"inchargeUserId\": 2,\n          \"inchargeName\": \"Lead User\",\n          \"inchargeEmployeeId\": \"EMP002\",\n          \"locationSiteId\": null,\n          \"locationSiteLabel\": null,\n          \"siteStartDate\": \"2026-01-01\",\n          \"siteEndDate\": \"2026-01-31\",\n          \"totalProjectDays\": 31,\n          \"certificateClientStatus\": \"NONE\",\n          \"customerFeedbackApprovedAt\": null,\n          \"createdAt\": \"2026-01-01T08:00:00\",\n          \"updatedAt\": \"2026-01-01T08:00:00\"\n        },\n        \"date\": \"2026-05-20\",\n        \"time\": \"09:15:00\",\n        \"photoPath\": \"uploads/attendance/10.jpg\",\n        \"status\": \"PENDING\",\n        \"rejectionReason\": null,\n        \"shift\": \"FULL_DAY\",\n        \"createdAt\": \"2026-05-20T09:15:01\"\n      }\n    ],\n    \"attendanceRate\": 58.06\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Admin — Dashboard & users",
+      "item": [
+        {
+          "name": "GET Admin dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/dashboard"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"totalEmployees\": 50,\n    \"todayAttendanceCount\": 40,\n    \"pendingApprovals\": 5,\n    \"approvedCount\": 30,\n    \"rejectedCount\": 2,\n    \"siteStats\": [\n      {\n        \"siteId\": 1,\n        \"siteName\": \"Site Alpha\",\n        \"jobCode\": \"JOB-001\",\n        \"todayAttendanceCount\": 10,\n        \"pendingApprovals\": 1,\n        \"approvedCount\": 8,\n        \"rejectedCount\": 0\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"EMP099\",\n  \"name\": \"New User\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"atLeast8Chars\",\n  \"role\": \"EMPLOYEE\",\n  \"employeeStatus\": \"ACTIVE\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Employee created successfully. Please share these credentials with the employee:\",\n  \"data\": {\n    \"user\": {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    },\n    \"password\": \"atLeast8Chars\",\n    \"email\": \"newuser@example.com\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Users search (paged)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users?search=&page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 1,\n        \"employeeId\": \"EMP001\",\n        \"name\": \"Ravi Kumar\",\n        \"email\": \"ravi@example.com\",\n        \"role\": \"EMPLOYEE\",\n        \"status\": \"ACTIVE\",\n        \"address\": \"123 Street\",\n        \"dateOfBirth\": \"1990-05-01\",\n        \"bloodGroup\": \"A_POSITIVE\",\n        \"validDocumentPath\": null,\n        \"employeeStatus\": \"ACTIVE\",\n        \"fatherName\": \"Father Name\",\n        \"dateOfJoining\": \"2024-01-15\",\n        \"officeContactNumber\": \"+911234567890\",\n        \"homeContactNumber\": null,\n        \"otherContactNumber\": null,\n        \"identificationMark\": null,\n        \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n        \"photoPath\": \"uploads/photos/1.jpg\",\n        \"createdAt\": \"2026-01-01T10:00:00\"\n      }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1,\n    \"size\": 10,\n    \"number\": 0,\n    \"first\": true,\n    \"last\": true,\n    \"empty\": false\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET User by employee id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users/by-employee-id/{{employeeId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET User by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Update user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User deleted successfully\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Reset password (raw JSON string body)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\"NewPassword123!\""
+            },
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/reset-password"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Password reset successfully\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET All employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users/employees"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Activate user",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/activate"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User activated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Deactivate user",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/deactivate"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User deactivated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Upload user document (multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/document"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Document uploaded successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Upload user photo (multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/photo"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Photo uploaded successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Upload user signature (multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/signature"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Signature uploaded successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"employeeId\": \"EMP001\",\n    \"name\": \"Ravi Kumar\",\n    \"email\": \"ravi@example.com\",\n    \"role\": \"EMPLOYEE\",\n    \"status\": \"ACTIVE\",\n    \"address\": \"123 Street\",\n    \"dateOfBirth\": \"1990-05-01\",\n    \"bloodGroup\": \"A_POSITIVE\",\n    \"validDocumentPath\": null,\n    \"employeeStatus\": \"ACTIVE\",\n    \"fatherName\": \"Father Name\",\n    \"dateOfJoining\": \"2024-01-15\",\n    \"officeContactNumber\": \"+911234567890\",\n    \"homeContactNumber\": null,\n    \"otherContactNumber\": null,\n    \"identificationMark\": null,\n    \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n    \"photoPath\": \"uploads/photos/1.jpg\",\n    \"createdAt\": \"2026-01-01T10:00:00\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Admin — Sites",
+      "item": [
+        {
+          "name": "POST Create site",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Site\",\n  \"jobCode\": \"JOB-NEW\",\n  \"address\": \"Addr\",\n  \"customerName\": \"Client\",\n  \"estimatedDays\": 20,\n  \"siteStartDate\": \"2026-06-01\",\n  \"siteEndDate\": \"2026-06-30\",\n  \"totalProjectDays\": 30\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Site created successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET All sites (array)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Sites paged",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/paged?search=&page=0&size=20"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 1,\n        \"name\": \"Site Alpha\",\n        \"jobCode\": \"JOB-001\",\n        \"address\": \"Industrial Area\",\n        \"isActive\": true,\n        \"customerName\": \"Acme Ltd\",\n        \"estimatedDays\": 30,\n        \"inchargeUserId\": 2,\n        \"inchargeName\": \"Lead User\",\n        \"inchargeEmployeeId\": \"EMP002\",\n        \"locationSiteId\": null,\n        \"locationSiteLabel\": null,\n        \"siteStartDate\": \"2026-01-01\",\n        \"siteEndDate\": \"2026-01-31\",\n        \"totalProjectDays\": 31,\n        \"certificateClientStatus\": \"NONE\",\n        \"customerFeedbackApprovedAt\": null,\n        \"createdAt\": \"2026-01-01T08:00:00\",\n        \"updatedAt\": \"2026-01-01T08:00:00\"\n      }\n    ],\n    \"totalElements\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Site options (active)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/site-options"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Site by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Update site",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed Site\",\n  \"isActive\": true\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Site updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE Site",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Site deleted successfully\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Activate site",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/activate"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Site activated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Deactivate site",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/deactivate"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Site deactivated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11. Admin — Attendance",
+      "item": [
+        {
+          "name": "GET All attendance (filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/attendance?date=2026-05-20&page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 10,\n        \"employee\": {\n          \"id\": 1,\n          \"employeeId\": \"EMP001\",\n          \"name\": \"Ravi Kumar\",\n          \"email\": \"ravi@example.com\",\n          \"role\": \"EMPLOYEE\",\n          \"status\": \"ACTIVE\",\n          \"address\": \"123 Street\",\n          \"dateOfBirth\": \"1990-05-01\",\n          \"bloodGroup\": \"A_POSITIVE\",\n          \"validDocumentPath\": null,\n          \"employeeStatus\": \"ACTIVE\",\n          \"fatherName\": \"Father Name\",\n          \"dateOfJoining\": \"2024-01-15\",\n          \"officeContactNumber\": \"+911234567890\",\n          \"homeContactNumber\": null,\n          \"otherContactNumber\": null,\n          \"identificationMark\": null,\n          \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n          \"photoPath\": \"uploads/photos/1.jpg\",\n          \"createdAt\": \"2026-01-01T10:00:00\"\n        },\n        \"site\": {\n          \"id\": 1,\n          \"name\": \"Site Alpha\",\n          \"jobCode\": \"JOB-001\",\n          \"address\": \"Industrial Area\",\n          \"isActive\": true,\n          \"customerName\": \"Acme Ltd\",\n          \"estimatedDays\": 30,\n          \"inchargeUserId\": 2,\n          \"inchargeName\": \"Lead User\",\n          \"inchargeEmployeeId\": \"EMP002\",\n          \"locationSiteId\": null,\n          \"locationSiteLabel\": null,\n          \"siteStartDate\": \"2026-01-01\",\n          \"siteEndDate\": \"2026-01-31\",\n          \"totalProjectDays\": 31,\n          \"certificateClientStatus\": \"NONE\",\n          \"customerFeedbackApprovedAt\": null,\n          \"createdAt\": \"2026-01-01T08:00:00\",\n          \"updatedAt\": \"2026-01-01T08:00:00\"\n        },\n        \"date\": \"2026-05-20\",\n        \"time\": \"09:15:00\",\n        \"photoPath\": \"uploads/attendance/10.jpg\",\n        \"status\": \"PENDING\",\n        \"rejectionReason\": null,\n        \"shift\": \"FULL_DAY\",\n        \"createdAt\": \"2026-05-20T09:15:01\"\n      }\n    ],\n    \"totalElements\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Attendance by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/attendance/{{attendanceId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 10,\n    \"employee\": {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    },\n    \"site\": {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    },\n    \"date\": \"2026-05-20\",\n    \"time\": \"09:15:00\",\n    \"photoPath\": \"uploads/attendance/10.jpg\",\n    \"status\": \"PENDING\",\n    \"rejectionReason\": null,\n    \"shift\": \"FULL_DAY\",\n    \"createdAt\": \"2026-05-20T09:15:01\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Employee attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/attendance/employee/{{userId}}?page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 10,\n        \"employee\": {\n          \"id\": 1,\n          \"employeeId\": \"EMP001\",\n          \"name\": \"Ravi Kumar\",\n          \"email\": \"ravi@example.com\",\n          \"role\": \"EMPLOYEE\",\n          \"status\": \"ACTIVE\",\n          \"address\": \"123 Street\",\n          \"dateOfBirth\": \"1990-05-01\",\n          \"bloodGroup\": \"A_POSITIVE\",\n          \"validDocumentPath\": null,\n          \"employeeStatus\": \"ACTIVE\",\n          \"fatherName\": \"Father Name\",\n          \"dateOfJoining\": \"2024-01-15\",\n          \"officeContactNumber\": \"+911234567890\",\n          \"homeContactNumber\": null,\n          \"otherContactNumber\": null,\n          \"identificationMark\": null,\n          \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n          \"photoPath\": \"uploads/photos/1.jpg\",\n          \"createdAt\": \"2026-01-01T10:00:00\"\n        },\n        \"site\": {\n          \"id\": 1,\n          \"name\": \"Site Alpha\",\n          \"jobCode\": \"JOB-001\",\n          \"address\": \"Industrial Area\",\n          \"isActive\": true,\n          \"customerName\": \"Acme Ltd\",\n          \"estimatedDays\": 30,\n          \"inchargeUserId\": 2,\n          \"inchargeName\": \"Lead User\",\n          \"inchargeEmployeeId\": \"EMP002\",\n          \"locationSiteId\": null,\n          \"locationSiteLabel\": null,\n          \"siteStartDate\": \"2026-01-01\",\n          \"siteEndDate\": \"2026-01-31\",\n          \"totalProjectDays\": 31,\n          \"certificateClientStatus\": \"NONE\",\n          \"customerFeedbackApprovedAt\": null,\n          \"createdAt\": \"2026-01-01T08:00:00\",\n          \"updatedAt\": \"2026-01-01T08:00:00\"\n        },\n        \"date\": \"2026-05-20\",\n        \"time\": \"09:15:00\",\n        \"photoPath\": \"uploads/attendance/10.jpg\",\n        \"status\": \"PENDING\",\n        \"rejectionReason\": null,\n        \"shift\": \"FULL_DAY\",\n        \"createdAt\": \"2026-05-20T09:15:01\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Site attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/attendance/site/{{siteId}}?page=0&size=10"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 10,\n        \"employee\": {\n          \"id\": 1,\n          \"employeeId\": \"EMP001\",\n          \"name\": \"Ravi Kumar\",\n          \"email\": \"ravi@example.com\",\n          \"role\": \"EMPLOYEE\",\n          \"status\": \"ACTIVE\",\n          \"address\": \"123 Street\",\n          \"dateOfBirth\": \"1990-05-01\",\n          \"bloodGroup\": \"A_POSITIVE\",\n          \"validDocumentPath\": null,\n          \"employeeStatus\": \"ACTIVE\",\n          \"fatherName\": \"Father Name\",\n          \"dateOfJoining\": \"2024-01-15\",\n          \"officeContactNumber\": \"+911234567890\",\n          \"homeContactNumber\": null,\n          \"otherContactNumber\": null,\n          \"identificationMark\": null,\n          \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n          \"photoPath\": \"uploads/photos/1.jpg\",\n          \"createdAt\": \"2026-01-01T10:00:00\"\n        },\n        \"site\": {\n          \"id\": 1,\n          \"name\": \"Site Alpha\",\n          \"jobCode\": \"JOB-001\",\n          \"address\": \"Industrial Area\",\n          \"isActive\": true,\n          \"customerName\": \"Acme Ltd\",\n          \"estimatedDays\": 30,\n          \"inchargeUserId\": 2,\n          \"inchargeName\": \"Lead User\",\n          \"inchargeEmployeeId\": \"EMP002\",\n          \"locationSiteId\": null,\n          \"locationSiteLabel\": null,\n          \"siteStartDate\": \"2026-01-01\",\n          \"siteEndDate\": \"2026-01-31\",\n          \"totalProjectDays\": 31,\n          \"certificateClientStatus\": \"NONE\",\n          \"customerFeedbackApprovedAt\": null,\n          \"createdAt\": \"2026-01-01T08:00:00\",\n          \"updatedAt\": \"2026-01-01T08:00:00\"\n        },\n        \"date\": \"2026-05-20\",\n        \"time\": \"09:15:00\",\n        \"photoPath\": \"uploads/attendance/10.jpg\",\n        \"status\": \"PENDING\",\n        \"rejectionReason\": null,\n        \"shift\": \"FULL_DAY\",\n        \"createdAt\": \"2026-05-20T09:15:01\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Approve/reject attendance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/attendance/{{attendanceId}}/approve",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"rejectionReason\": null\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Attendance updated successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"employee\": {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    },\n    \"site\": {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    },\n    \"date\": \"2026-05-20\",\n    \"time\": \"09:15:00\",\n    \"photoPath\": \"uploads/attendance/10.jpg\",\n    \"status\": \"PENDING\",\n    \"rejectionReason\": null,\n    \"shift\": \"FULL_DAY\",\n    \"createdAt\": \"2026-05-20T09:15:01\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Update attendance shift",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/attendance/{{attendanceId}}/shift",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shift\": \"FIRST_HALF\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Shift updated successfully\",\n  \"data\": {\n    \"id\": 10,\n    \"employee\": {\n      \"id\": 1,\n      \"employeeId\": \"EMP001\",\n      \"name\": \"Ravi Kumar\",\n      \"email\": \"ravi@example.com\",\n      \"role\": \"EMPLOYEE\",\n      \"status\": \"ACTIVE\",\n      \"address\": \"123 Street\",\n      \"dateOfBirth\": \"1990-05-01\",\n      \"bloodGroup\": \"A_POSITIVE\",\n      \"validDocumentPath\": null,\n      \"employeeStatus\": \"ACTIVE\",\n      \"fatherName\": \"Father Name\",\n      \"dateOfJoining\": \"2024-01-15\",\n      \"officeContactNumber\": \"+911234567890\",\n      \"homeContactNumber\": null,\n      \"otherContactNumber\": null,\n      \"identificationMark\": null,\n      \"specimenSignaturePath\": \"uploads/signatures/1_sig.png\",\n      \"photoPath\": \"uploads/photos/1.jpg\",\n      \"createdAt\": \"2026-01-01T10:00:00\"\n    },\n    \"site\": {\n      \"id\": 1,\n      \"name\": \"Site Alpha\",\n      \"jobCode\": \"JOB-001\",\n      \"address\": \"Industrial Area\",\n      \"isActive\": true,\n      \"customerName\": \"Acme Ltd\",\n      \"estimatedDays\": 30,\n      \"inchargeUserId\": 2,\n      \"inchargeName\": \"Lead User\",\n      \"inchargeEmployeeId\": \"EMP002\",\n      \"locationSiteId\": null,\n      \"locationSiteLabel\": null,\n      \"siteStartDate\": \"2026-01-01\",\n      \"siteEndDate\": \"2026-01-31\",\n      \"totalProjectDays\": 31,\n      \"certificateClientStatus\": \"NONE\",\n      \"customerFeedbackApprovedAt\": null,\n      \"createdAt\": \"2026-01-01T08:00:00\",\n      \"updatedAt\": \"2026-01-01T08:00:00\"\n    },\n    \"date\": \"2026-05-20\",\n    \"time\": \"09:15:00\",\n    \"photoPath\": \"uploads/attendance/10.jpg\",\n    \"status\": \"PENDING\",\n    \"rejectionReason\": null,\n    \"shift\": \"FULL_DAY\",\n    \"createdAt\": \"2026-05-20T09:15:01\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE Attendance",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/attendance/{{attendanceId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Attendance deleted successfully\",\n  \"data\": null\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12. Admin — Notices",
+      "item": [
+        {
+          "name": "POST Create notice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/notices",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Board message\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Notice created successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"message\": \"Board message\",\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Notices paged",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/notices?search=&page=0&size=20"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"content\": [],\n    \"totalElements\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Notice by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/notices/1"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"id\": 1,\n    \"message\": \"Board message\",\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Update notice",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/notices/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Updated\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Notice updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"message\": \"Updated\",\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-02T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE Notice",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/notices/1"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Notice deleted successfully\",\n  \"data\": null\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13. Admin — Site job extensions",
+      "item": [
+        {
+          "name": "GET Wizard JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/wizard"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": \"{\\\"step\\\":1}\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Wizard JSON",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/wizard",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"step\": 1,\n  \"data\": {}\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Wizard saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Attendance register",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/attendance-register?blockIndex=0&daysPerBlock=15"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"siteId\": 1,\n    \"jobCode\": \"JOB-001\",\n    \"customerName\": \"Acme Ltd\",\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"estimatedDays\": 30,\n    \"periodStart\": \"2026-01-01\",\n    \"periodEnd\": \"2026-01-15\",\n    \"blockIndex\": 0,\n    \"dayDates\": [\n      \"2026-01-01\",\n      \"2026-01-02\"\n    ],\n    \"rows\": [\n      {\n        \"slNo\": 1,\n        \"employeeId\": 1,\n        \"employeeName\": \"Ravi\",\n        \"dayCodes\": [\n          \"P\",\n          \"\"\n        ]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Attendance register cells",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/attendance-register-cells",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cells\": [\n    {\n      \"employeeUserId\": 1,\n      \"date\": \"2026-01-10\",\n      \"code\": \"HQ\"\n    }\n  ]\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Register cells saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Advance expense lines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/advance-expense-lines"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Advance expense lines",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/advance-expense-lines",
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Advance lines saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Technician payments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/technician-payments"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Technician payments",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/technician-payments",
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Technician payments saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Tool issues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/tool-issues"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Tool issues",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/tool-issues",
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Tool issues saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Equipment portal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/equipment-portal?year=2026&month=5"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Equipment portal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/equipment-portal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availabilityYear\": 2026,\n  \"availabilityMonth\": 5,\n  \"categories\": [\n    {\n      \"id\": null,\n      \"title\": \"A. MEASURING INSTRUMENTS\",\n      \"sortOrder\": 0,\n      \"items\": [\n        {\n          \"id\": null,\n          \"lineOrder\": 0,\n          \"itemDescription\": \"Dial Gauge with Magnetic Base\",\n          \"uom\": \"Nos\",\n          \"qty\": \"1\",\n          \"dateNote\": null,\n          \"dayPresent\": { \"1\": true, \"2\": true }\n        }\n      ]\n    }\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Equipment portal layout (drag/drop)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/equipment-portal/layout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categories\": [\n    {\n      \"categoryId\": 1,\n      \"itemIds\": [10, 11]\n    },\n    {\n      \"categoryId\": 2,\n      \"itemIds\": [12]\n    }\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Behaviour report JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/behaviour-report"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": \"{}\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Behaviour report JSON",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/behaviour-report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matrix\": []\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Behaviour report saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Challenge lines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/challenge-lines"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": []\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Challenge lines",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/job-data/challenge-lines",
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Challenges saved\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Site Alpha\",\n    \"jobCode\": \"JOB-001\",\n    \"address\": \"Industrial Area\",\n    \"isActive\": true,\n    \"customerName\": \"Acme Ltd\",\n    \"estimatedDays\": 30,\n    \"inchargeUserId\": 2,\n    \"inchargeName\": \"Lead User\",\n    \"inchargeEmployeeId\": \"EMP002\",\n    \"locationSiteId\": null,\n    \"locationSiteLabel\": null,\n    \"siteStartDate\": \"2026-01-01\",\n    \"siteEndDate\": \"2026-01-31\",\n    \"totalProjectDays\": 31,\n    \"certificateClientStatus\": \"NONE\",\n    \"customerFeedbackApprovedAt\": null,\n    \"createdAt\": \"2026-01-01T08:00:00\",\n    \"updatedAt\": \"2026-01-01T08:00:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Feedback invite",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/feedback-invites"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"token\": \"opaque-token\",\n    \"expiresAt\": \"2026-06-01T12:00:00\",\n    \"relativePath\": \"/api/public/feedback/opaque-token\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Customer feedback (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/sites/{{siteId}}/customer-feedback"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"certificateClientStatus\": \"FEEDBACK_SUBMITTED\",\n    \"customerFeedbackApprovedAt\": null,\n    \"feedbackJson\": \"{}\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "14. Admin — Machinery",
+      "item": [
+        {
+          "name": "GET List machinery for site",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/machinery?siteId={{siteId}}"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"code\": \"EX-01\",\n      \"name\": \"Excavator\",\n      \"itemDescription\": null,\n      \"jobCode\": \"JOB-001\",\n      \"defaultUom\": \"HR\",\n      \"siteId\": 1,\n      \"siteName\": \"Site Alpha\",\n      \"imagePath\": null,\n      \"serialNumber\": null,\n      \"model\": null,\n      \"status\": \"ACTIVE\",\n      \"createdAt\": \"2026-01-01T10:00:00\",\n      \"updatedAt\": \"2026-01-01T10:00:00\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Create machinery (multipart: data + optional image)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "type": "text",
+                  "contentType": "application/json",
+                  "value": "{\"code\":\"EX-02\",\"name\":\"Crane\",\"siteId\":1,\"defaultUom\":\"HR\",\"status\":\"ACTIVE\"}"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/machinery"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Machinery created\",\n  \"data\": {\n    \"id\": 2,\n    \"code\": \"EX-02\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Update machinery (multipart)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "type": "text",
+                  "contentType": "application/json",
+                  "value": "{\"name\":\"Crane XL\"}"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/machinery/1"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Machinery updated\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Crane XL\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE Machinery",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/machinery/1"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Usage selection (daily)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/machinery/usage/selection?siteId={{siteId}}&date=2026-05-20"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"siteId\": 1,\n    \"date\": \"2026-05-20\",\n    \"lines\": [\n      {\n        \"machineryId\": 1,\n        \"code\": \"EX-01\",\n        \"name\": \"Excavator\",\n        \"itemDescription\": null,\n        \"catalogStatus\": \"ACTIVE\",\n        \"imagePath\": null,\n        \"qty\": 8.5,\n        \"uom\": \"HR\",\n        \"jobCode\": \"JOB-001\",\n        \"notes\": null\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Usage selection",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/machinery/usage/selection",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"siteId\": 1,\n  \"date\": \"2026-05-20\",\n  \"lines\": [\n    {\n      \"machineryId\": 1,\n      \"qty\": 8,\n      \"uom\": \"HR\",\n      \"jobCode\": \"JOB-001\",\n      \"notes\": \"\"\n    }\n  ]\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Usage saved\",\n  \"data\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Monthly usage summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/machinery/usage/summary/month?siteId={{siteId}}&year=2026&month=5"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"siteId\": 1,\n    \"year\": 2026,\n    \"month\": 5,\n    \"days\": [\n      {\n        \"date\": \"2026-05-20\",\n        \"machineCount\": 2,\n        \"machineCodes\": [\n          \"EX-01\",\n          \"EX-02\"\n        ]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Yearly usage summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/admin/machinery/usage/summary/year?siteId={{siteId}}&year=2026"
+          },
+          "response": [
+            {
+              "name": "Example 200",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Success\",\n  \"data\": {\n    \"siteId\": 1,\n    \"year\": 2026,\n    \"months\": [\n      {\n        \"month\": 5,\n        \"monthName\": \"MAY\",\n        \"daysWithUsage\": 10,\n        \"totalMachineDays\": 25,\n        \"topMachineCodes\": [\n          \"EX-01\"\n        ]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

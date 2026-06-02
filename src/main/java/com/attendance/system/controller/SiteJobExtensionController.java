@@ -3,6 +3,9 @@ package com.attendance.system.controller;
 import com.attendance.system.dto.jobsite.SaveRegisterCellsRequest;
 import com.attendance.system.dto.jobsite.SiteAdvanceExpenseLineDto;
 import com.attendance.system.dto.jobsite.SiteChallengeLineDto;
+import com.attendance.system.dto.jobsite.SiteEquipmentLayoutSaveRequest;
+import com.attendance.system.dto.jobsite.SiteEquipmentPortalResponse;
+import com.attendance.system.dto.jobsite.SiteEquipmentPortalSaveRequest;
 import com.attendance.system.dto.jobsite.SiteTechnicianDailyPaymentDto;
 import com.attendance.system.dto.jobsite.SiteToolIssueDto;
 import com.attendance.system.dto.response.ApiResponse;
@@ -12,6 +15,7 @@ import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.enums.CertificateClientStatus;
 import com.attendance.system.service.AttendanceService;
 import com.attendance.system.service.CustomerFeedbackService;
+import com.attendance.system.service.SiteEquipmentService;
 import com.attendance.system.service.SiteJobDataService;
 import com.attendance.system.service.SiteService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +49,7 @@ public class SiteJobExtensionController {
 
     private final SiteService siteService;
     private final SiteJobDataService siteJobDataService;
+    private final SiteEquipmentService siteEquipmentService;
     private final AttendanceService attendanceService;
     private final CustomerFeedbackService customerFeedbackService;
 
@@ -129,6 +134,42 @@ public class SiteJobExtensionController {
         return ResponseEntity.ok(ApiResponse.success("Tool issues saved", siteService.getSiteById(id)));
     }
 
+    @GetMapping("/{id}/job-data/equipment-portal")
+    @Operation(
+        summary = "Equipment portal — categories, items, optional monthly availability",
+        description = "Returns site-scoped equipment rows grouped by category. When year and month are both set, each item includes dayPresent (day-of-month → true) for that calendar month."
+    )
+    public ResponseEntity<ApiResponse<SiteEquipmentPortalResponse>> getEquipmentPortal(
+        @PathVariable Long id,
+        @RequestParam(required = false) Integer year,
+        @RequestParam(required = false) Integer month) {
+        return ResponseEntity.ok(ApiResponse.success(siteEquipmentService.getPortal(id, year, month)));
+    }
+
+    @PutMapping("/{id}/job-data/equipment-portal")
+    @Operation(
+        summary = "Save equipment portal (categories + items + optional month availability)",
+        description = "Authoritative save: items not included are deleted. When availabilityYear and availabilityMonth are set, any item with non-null dayPresent updates that month (true = cell stored; false or omitted day = no cell)."
+    )
+    public ResponseEntity<ApiResponse<SiteEquipmentPortalResponse>> putEquipmentPortal(
+        @PathVariable Long id,
+        @Valid @RequestBody SiteEquipmentPortalSaveRequest body) {
+        SiteEquipmentPortalResponse data = siteEquipmentService.savePortal(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Equipment portal saved", data));
+    }
+
+    @PutMapping("/{id}/job-data/equipment-portal/layout")
+    @Operation(
+        summary = "Reorder / cross-category move equipment items",
+        description = "Each block is a categoryId and ordered itemIds for that category after drag-and-drop. Every item on the site must appear exactly once across all blocks."
+    )
+    public ResponseEntity<ApiResponse<SiteEquipmentPortalResponse>> putEquipmentPortalLayout(
+        @PathVariable Long id,
+        @Valid @RequestBody SiteEquipmentLayoutSaveRequest body) {
+        siteEquipmentService.saveLayout(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Equipment layout saved", siteEquipmentService.getPortal(id, null, null)));
+    }
+
     @GetMapping("/{id}/job-data/behaviour-report")
     @Operation(summary = "Screen 7 — behaviour matrix JSON")
     public ResponseEntity<ApiResponse<String>> getBehaviour(@PathVariable Long id) {
@@ -159,6 +200,7 @@ public class SiteJobExtensionController {
         return ResponseEntity.ok(ApiResponse.success("Challenges saved", siteService.getSiteById(id)));
     }
 
+    @PostMapping("/{id}/feedback-invites")
     @Operation(summary = "Create public feedback link", description = "Opaque token for customer feedback + certificate approval.")
     public ResponseEntity<ApiResponse<FeedbackInviteResponse>> createFeedbackInvite(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(customerFeedbackService.createInvite(id)));
