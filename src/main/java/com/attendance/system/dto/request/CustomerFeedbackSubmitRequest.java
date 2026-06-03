@@ -6,6 +6,13 @@ import lombok.Data;
 @Data
 public class CustomerFeedbackSubmitRequest {
 
+    /**
+     * Invite token from the public link. Required for
+     * {@code POST /api/public/sites/{siteId}/customer-feedback}; ignored when the token is only in the URL path
+     * ({@code POST /api/public/feedback/{token}}).
+     */
+    private String token;
+
     private String name;
     private String email;
     private String phone;

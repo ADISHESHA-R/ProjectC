@@ -35,7 +35,7 @@ public class PublicFeedbackRateLimitFilter extends OncePerRequestFilter {
         @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String uri = request.getRequestURI();
-        if (!uri.startsWith("/api/public/feedback")) {
+        if (!isPublicFeedbackRateLimitedPath(uri)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -54,5 +54,13 @@ public class PublicFeedbackRateLimitFilter extends OncePerRequestFilter {
             MINUTE_BUCKETS.clear();
         }
         filterChain.doFilter(request, response);
+    }
+
+    /** Token-in-path feedback API and site-scoped POST used by the static SPA (same-origin /api rewrite). */
+    private static boolean isPublicFeedbackRateLimitedPath(String uri) {
+        if (uri.startsWith("/api/public/feedback")) {
+            return true;
+        }
+        return uri.startsWith("/api/public/sites/") && uri.endsWith("/customer-feedback");
     }
 }

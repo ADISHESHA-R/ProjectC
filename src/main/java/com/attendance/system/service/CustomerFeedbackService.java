@@ -67,6 +67,23 @@ public class CustomerFeedbackService {
         );
     }
 
+    /**
+     * Same as {@link #submitFeedback(String, CustomerFeedbackSubmitRequest)} but requires {@code body.token}
+     * to match a valid invite for {@code siteId} (path and token must agree).
+     */
+    @Transactional
+    public void submitFeedbackForSite(Long siteId, CustomerFeedbackSubmitRequest body) {
+        if (body.getToken() == null || body.getToken().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "token is required in the request body");
+        }
+        String trimmed = body.getToken().trim();
+        CustomerFeedbackToken row = requireValidToken(trimmed);
+        if (!row.getSite().getId().equals(siteId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired link");
+        }
+        submitFeedback(trimmed, body);
+    }
+
     @Transactional
     public void submitFeedback(String token, CustomerFeedbackSubmitRequest body) {
         CustomerFeedbackToken row = requireValidToken(token);
