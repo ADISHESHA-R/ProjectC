@@ -161,6 +161,11 @@ public class SiteEquipmentService {
             }
         }
 
+        // Ensure item.category_id updates are persisted before deleting removed categories
+        // (avoids FK violation: delete on site_equipment_categories while items still reference it).
+        itemRepository.flush();
+        categoryRepository.flush();
+
         List<Long> existingCategoryIdsAfter = categoryRepository.findBySite_IdOrderBySortOrderAscIdAsc(siteId).stream()
             .map(SiteEquipmentCategory::getId)
             .collect(Collectors.toList());
