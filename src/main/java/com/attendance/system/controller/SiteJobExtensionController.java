@@ -2,6 +2,7 @@ package com.attendance.system.controller;
 
 import com.attendance.system.dto.jobsite.SaveRegisterCellsRequest;
 import com.attendance.system.dto.jobsite.SiteAdvanceExpenseLineDto;
+import com.attendance.system.dto.jobsite.SiteJobWorkflowBatchSaveRequest;
 import com.attendance.system.dto.jobsite.SiteChallengeLineDto;
 import com.attendance.system.dto.jobsite.SiteEquipmentLayoutSaveRequest;
 import com.attendance.system.dto.jobsite.SiteEquipmentPortalResponse;
@@ -18,6 +19,7 @@ import com.attendance.system.service.CustomerFeedbackService;
 import com.attendance.system.service.SiteEquipmentService;
 import com.attendance.system.service.SiteJobDataService;
 import com.attendance.system.service.SiteService;
+import com.attendance.system.service.SiteWorkflowBatchService;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,6 +53,7 @@ public class SiteJobExtensionController {
     private final SiteService siteService;
     private final SiteJobDataService siteJobDataService;
     private final SiteEquipmentService siteEquipmentService;
+    private final SiteWorkflowBatchService siteWorkflowBatchService;
     private final AttendanceService attendanceService;
     private final CustomerFeedbackService customerFeedbackService;
 
@@ -66,6 +70,23 @@ public class SiteJobExtensionController {
         @RequestBody JsonNode payload) {
         SiteResponse updated = siteService.saveWizardData(id, payload.toString());
         return ResponseEntity.ok(ApiResponse.success("Wizard saved", updated));
+    }
+
+    @RequestMapping(
+        value = "/{id}/job-data/workflow-batch",
+        method = {RequestMethod.PUT, RequestMethod.POST},
+        consumes = "application/json")
+    @Operation(
+        summary = "Save multiple workflow sections in one request",
+        description = "Optional JSON object; each non-null property is saved in order: wizard, advanceExpenseLines, "
+            + "technicianPayments, toolIssues, equipmentPortal, behaviourReport, challengeLines, attendanceRegisterCells. "
+            + "If both wizard and challengeLines are sent, challengeLines is applied after wizard (overrides synced challenges). "
+            + "Requires admin JWT in the Authorization header.")
+    public ResponseEntity<ApiResponse<SiteResponse>> saveWorkflowBatch(
+        @PathVariable Long id,
+        @Valid @RequestBody SiteJobWorkflowBatchSaveRequest body) {
+        siteWorkflowBatchService.saveBatch(id, body);
+        return ResponseEntity.ok(ApiResponse.success("Workflow batch saved", siteService.getSiteById(id)));
     }
 
     @GetMapping("/{id}/attendance-register")
@@ -191,12 +212,19 @@ public class SiteJobExtensionController {
         return ResponseEntity.ok(ApiResponse.success(siteJobDataService.getChallengeLines(id)));
     }
 
-    @PutMapping("/{id}/job-data/challenge-lines")
-    @Operation(summary = "Replace challenge lines", description = "Each row: headLabel (or challengeCatalogIndex 1..n with catalog from GET /api/meta/challenge-line-heads) plus optional incidentDate, involvedUserId, challengesFaced, status. Any number of rows.")
-    public ResponseEntity<ApiResponse<SiteResponse>> putChallenges(
+    @RequestMapping(
+        value = "/{id}/job-data/challenge-lines",
+        method = {RequestMethod.PUT, RequestMethod.POST},
+        consumes = "application/json")
+    @Operation(
+        summary = "Replace challenge lines (PUT or POST)",
+        description = "Body may be a raw JSON array of rows, or an object with one of: challengeLines, challenges, rows, lines, items, data. "
+            + "Each row: headLabel (or challengeCatalogIndex 1..n from GET /api/meta/challenge-line-heads) plus optional incidentDate, involvedUserId, challengesFaced, status. "
+            + "If headLabel is omitted but the row has other fields, the server may infer the head from row order vs the built-in catalog.")
+    public ResponseEntity<ApiResponse<SiteResponse>> saveChallenges(
         @PathVariable Long id,
-        @RequestBody List<SiteChallengeLineDto> rows) {
-        siteJobDataService.replaceChallengeLines(id, rows);
+        @RequestBody JsonNode payload) {
+        siteJobDataService.replaceChallengeLinesFromPayload(id, payload);
         return ResponseEntity.ok(ApiResponse.success("Challenges saved", siteService.getSiteById(id)));
     }
 
@@ -213,6 +241,8 @@ public class SiteJobExtensionController {
         SiteCustomerFeedbackAdminDto dto = new SiteCustomerFeedbackAdminDto();
         dto.setCertificateClientStatus(site.getCertificateClientStatus());
         dto.setCustomerFeedbackApprovedAt(site.getCustomerFeedbackApprovedAt());
+        dto.setCustomerFeedbackInviteToken(site.getCustomerFeedbackInviteToken());
+        dto.setCustomerFeedbackInviteExpiresAt(site.getCustomerFeedbackInviteExpiresAt());
         dto.setFeedbackJson(customerFeedbackService.getFeedbackPayloadForAdmin(id));
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
@@ -221,6 +251,9 @@ public class SiteJobExtensionController {
     public static class SiteCustomerFeedbackAdminDto {
         private CertificateClientStatus certificateClientStatus;
         private LocalDateTime customerFeedbackApprovedAt;
+        /** Opaque token for public link: {@code /customer-feedback/{siteId}?token=...} */
+        private String customerFeedbackInviteToken;
+        private LocalDateTime customerFeedbackInviteExpiresAt;
         private String feedbackJson;
     }
 }

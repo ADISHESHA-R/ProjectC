@@ -466,6 +466,8 @@ public class AttendanceService {
             site.getCertificateClientStatus() != null
                 ? site.getCertificateClientStatus() : CertificateClientStatus.NONE,
             site.getCustomerFeedbackApprovedAt(),
+            null,
+            null,
             site.getCreatedAt(),
             site.getUpdatedAt()
         );

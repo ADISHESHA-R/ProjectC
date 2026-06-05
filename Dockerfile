@@ -9,12 +9,17 @@ RUN mvn dependency:go-offline -B
 # Copy source code
 COPY src ./src
 
-# Build the application
-RUN mvn clean package -DskipTests
+# Optional Docker build-arg (pass commit SHA from CI/Render) so this layer invalidates when code changes
+# even if dependency layers were restored from a remote cache.
+ARG GIT_COMMIT=local
+RUN echo "GIT_COMMIT=${GIT_COMMIT}" && mvn clean package -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+
+# wget is not in the minimal JRE image; HEALTHCHECK and compose healthchecks use it
+RUN apk add --no-cache wget
 
 # Create non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring

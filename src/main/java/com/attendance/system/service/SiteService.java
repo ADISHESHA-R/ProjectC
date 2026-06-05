@@ -3,6 +3,7 @@ package com.attendance.system.service;
 import com.attendance.system.dto.request.CreateSiteRequest;
 import com.attendance.system.dto.request.UpdateSiteRequest;
 import com.attendance.system.dto.response.SiteResponse;
+import com.attendance.system.entity.CustomerFeedbackToken;
 import com.attendance.system.entity.Site;
 import com.attendance.system.entity.User;
 import com.attendance.system.enums.CertificateClientStatus;
@@ -20,7 +21,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -204,6 +207,7 @@ public class SiteService {
             .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
         site.setWizardData(json);
         siteRepository.save(site);
+        siteJobDataService.trySyncChallengeLinesFromWizardString(siteId, json);
         return mapToSiteResponse(siteRepository.findByIdWithJobMeta(siteId).orElse(site));
     }
 
@@ -232,6 +236,15 @@ public class SiteService {
         }
         CertificateClientStatus cert = site.getCertificateClientStatus() != null
             ? site.getCertificateClientStatus() : CertificateClientStatus.NONE;
+        String feedbackToken = null;
+        LocalDateTime feedbackTokenExpires = null;
+        Optional<CustomerFeedbackToken> inviteOpt = customerFeedbackTokenRepository
+            .findFirstBySite_IdAndRevokedFalseAndExpiresAtAfterOrderByExpiresAtDesc(site.getId(), LocalDateTime.now());
+        if (inviteOpt.isPresent()) {
+            CustomerFeedbackToken t = inviteOpt.get();
+            feedbackToken = t.getToken();
+            feedbackTokenExpires = t.getExpiresAt();
+        }
         return new SiteResponse(
             site.getId(),
             site.getName(),
@@ -250,6 +263,8 @@ public class SiteService {
             site.getTotalProjectDays(),
             cert,
             site.getCustomerFeedbackApprovedAt(),
+            feedbackToken,
+            feedbackTokenExpires,
             site.getCreatedAt(),
             site.getUpdatedAt()
         );

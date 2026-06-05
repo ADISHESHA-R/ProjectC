@@ -23,20 +23,31 @@ import com.attendance.system.repository.SiteRepository;
 import com.attendance.system.repository.SiteTechnicianDailyPaymentRepository;
 import com.attendance.system.repository.SiteToolIssueRepository;
 import com.attendance.system.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class SiteJobDataService {
 
-    public static final List<String> CHALLENGE_HEADS = List.of(
+    private static final String[] CHALLENGE_LINE_ARRAY_KEYS = {
+        "challengeLines", "challenges", "siteChallengeLines", "challengeRows", "rows", "lines", "items", "data"
+    };
+
+    private static final String[] WIZARD_STEP_KEYS = {"step7", "step9", "step_7", "step_9"};
+
+    private static final String[] CHALLENGE_HEAD_LABELS = {
         "Transport",
         "Un-Loading",
         "Crane",
@@ -59,15 +70,9 @@ public class SiteJobDataService {
         "Work site Closed",
         "Work Timing Restriction",
         "Local Manpower Issue"
-    );
+    };
 
-    public List<ChallengeHeadResponse> getChallengeHeadCatalog() {
-        List<ChallengeHeadResponse> out = new ArrayList<>();
-        for (int i = 0; i < CHALLENGE_HEADS.size(); i++) {
-            out.add(new ChallengeHeadResponse(i + 1, CHALLENGE_HEADS.get(i)));
-        }
-        return out;
-    }
+    public static final List<String> CHALLENGE_HEADS = Collections.unmodifiableList(Arrays.asList(CHALLENGE_HEAD_LABELS));
 
     private final SiteRepository siteRepository;
     private final UserRepository userRepository;
@@ -78,6 +83,38 @@ public class SiteJobDataService {
     private final SiteChallengeLineRepository challengeLineRepository;
     private final SiteAttendanceRegisterCellRepository attendanceRegisterCellRepository;
     private final SiteEquipmentService siteEquipmentService;
+    private final ObjectMapper objectMapper;
+
+    public SiteJobDataService(
+        SiteRepository siteRepository,
+        UserRepository userRepository,
+        SiteAdvanceExpenseLineRepository advanceExpenseLineRepository,
+        SiteTechnicianDailyPaymentRepository technicianDailyPaymentRepository,
+        SiteToolIssueRepository toolIssueRepository,
+        SiteBehaviourReportRepository behaviourReportRepository,
+        SiteChallengeLineRepository challengeLineRepository,
+        SiteAttendanceRegisterCellRepository attendanceRegisterCellRepository,
+        SiteEquipmentService siteEquipmentService,
+        ObjectMapper objectMapper) {
+        this.siteRepository = siteRepository;
+        this.userRepository = userRepository;
+        this.advanceExpenseLineRepository = advanceExpenseLineRepository;
+        this.technicianDailyPaymentRepository = technicianDailyPaymentRepository;
+        this.toolIssueRepository = toolIssueRepository;
+        this.behaviourReportRepository = behaviourReportRepository;
+        this.challengeLineRepository = challengeLineRepository;
+        this.attendanceRegisterCellRepository = attendanceRegisterCellRepository;
+        this.siteEquipmentService = siteEquipmentService;
+        this.objectMapper = objectMapper;
+    }
+
+    public List<ChallengeHeadResponse> getChallengeHeadCatalog() {
+        List<ChallengeHeadResponse> out = new ArrayList<>();
+        for (int i = 0; i < CHALLENGE_HEADS.size(); i++) {
+            out.add(new ChallengeHeadResponse(i + 1, CHALLENGE_HEADS.get(i)));
+        }
+        return out;
+    }
 
     private Site requireSite(Long siteId) {
         return siteRepository.findById(siteId)
@@ -278,16 +315,151 @@ public class SiteJobDataService {
         return null;
     }
 
+    private boolean rowHasPersistableContent(SiteChallengeLineDto d) {
+        return d.getIncidentDate() != null
+            || d.getInvolvedUserId() != null
+            || (d.getChallengesFaced() != null && !d.getChallengesFaced().isBlank())
+            || d.getStatus() != null;
+    }
+
+    /**
+     * When the UI sends rows aligned to the fixed catalog but omits {@code headLabel},
+     * infer the head from row order (first row maps to first catalog label, etc.).
+     */
+    private String resolveHeadWithCatalogFallback(SiteChallengeLineDto d, int zeroBasedRowIndex) {
+        String head = resolveChallengeHeadLabel(d);
+        if (head != null && !head.isEmpty()) {
+            return head;
+        }
+        if (rowHasPersistableContent(d)
+            && zeroBasedRowIndex >= 0
+            && zeroBasedRowIndex < CHALLENGE_HEADS.size()) {
+            return CHALLENGE_HEADS.get(zeroBasedRowIndex);
+        }
+        return null;
+    }
+
+    private JsonNode findFirstArrayChild(JsonNode object, String[] keys) {
+        if (object == null || !object.isObject()) {
+            return null;
+        }
+        for (String k : keys) {
+            if (object.has(k)) {
+                JsonNode v = object.get(k);
+                if (v.isArray()) {
+                    return v;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Looks for a challenge row array inside the wizard JSON (several common shapes).
+     */
+    private JsonNode locateChallengeArrayInWizard(JsonNode root) {
+        if (root == null || !root.isObject()) {
+            return null;
+        }
+        JsonNode direct = findFirstArrayChild(root, CHALLENGE_LINE_ARRAY_KEYS);
+        if (direct != null) {
+            return direct;
+        }
+        for (String sk : WIZARD_STEP_KEYS) {
+            if (!root.has(sk) || !root.get(sk).isObject()) {
+                continue;
+            }
+            JsonNode step = root.get(sk);
+            JsonNode nested = findFirstArrayChild(step, CHALLENGE_LINE_ARRAY_KEYS);
+            if (nested != null) {
+                return nested;
+            }
+        }
+        if (root.has("steps") && root.get("steps").isObject()) {
+            JsonNode steps = root.get("steps");
+            for (String idx : List.of("7", "9")) {
+                if (!steps.has(idx)) {
+                    continue;
+                }
+                JsonNode step = steps.get(idx);
+                if (step.isArray()) {
+                    return step;
+                }
+                if (step.isObject()) {
+                    JsonNode nested = findFirstArrayChild(step, CHALLENGE_LINE_ARRAY_KEYS);
+                    if (nested != null) {
+                        return nested;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses PUT/POST body: raw JSON array, or an object with {@code rows}/{@code lines}/{@code challengeLines}/etc.
+     */
+    @Transactional
+    public void replaceChallengeLinesFromPayload(Long siteId, JsonNode body) {
+        if (body == null || body.isNull()) {
+            doReplaceChallengeLines(siteId, List.of());
+            return;
+        }
+        JsonNode array;
+        if (body.isArray()) {
+            array = body;
+        } else if (body.isObject()) {
+            array = findFirstArrayChild(body, CHALLENGE_LINE_ARRAY_KEYS);
+            if (array == null) {
+                throw new IllegalArgumentException(
+                    "Challenge lines body must be a JSON array, or an object containing one of: "
+                        + String.join(", ", CHALLENGE_LINE_ARRAY_KEYS));
+            }
+        } else {
+            throw new IllegalArgumentException("Challenge lines body must be a JSON array or object");
+        }
+        List<SiteChallengeLineDto> rows = objectMapper.convertValue(array, new TypeReference<>() {});
+        doReplaceChallengeLines(siteId, rows);
+    }
+
+    /**
+     * When the UI only persists the wizard blob, also upsert {@code site_challenge_lines}
+     * if the JSON contains a recognizable challenge array (does nothing otherwise).
+     */
+    @Transactional
+    public void trySyncChallengeLinesFromWizardString(Long siteId, String wizardJson) {
+        if (wizardJson == null || wizardJson.isBlank()) {
+            return;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(wizardJson);
+            JsonNode arr = locateChallengeArrayInWizard(root);
+            if (arr == null || !arr.isArray()) {
+                return;
+            }
+            List<SiteChallengeLineDto> rows = objectMapper.convertValue(arr, new TypeReference<>() {});
+            doReplaceChallengeLines(siteId, rows);
+        } catch (Exception e) {
+            log.warn("Challenge lines sync from wizard skipped for site {}: {}", siteId, e.getMessage());
+        }
+    }
+
     @Transactional
     public void replaceChallengeLines(Long siteId, List<SiteChallengeLineDto> rows) {
+        doReplaceChallengeLines(siteId, rows);
+    }
+
+    private void doReplaceChallengeLines(Long siteId, List<SiteChallengeLineDto> rows) {
         Site site = requireSite(siteId);
         challengeLineRepository.deleteBySite_Id(siteId);
         if (rows == null) {
             return;
         }
         int autoOrder = 0;
+        int rowIndex = 0;
         for (SiteChallengeLineDto d : rows) {
-            String head = resolveChallengeHeadLabel(d);
+            String head = resolveHeadWithCatalogFallback(d, rowIndex);
+            rowIndex++;
             if (head == null || head.isEmpty()) {
                 continue;
             }

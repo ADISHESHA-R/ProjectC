@@ -35,6 +35,10 @@ public class SiteResponse {
     private CertificateClientStatus certificateClientStatus;
     private LocalDateTime customerFeedbackApprovedAt;
 
+    /** Latest valid invite token for public customer feedback (use with {@code ?token=} on the feedback URL). */
+    private String customerFeedbackInviteToken;
+    private LocalDateTime customerFeedbackInviteExpiresAt;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

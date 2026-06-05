@@ -269,9 +269,11 @@ public class SiteEquipmentService {
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
         cellRepository.deleteForItemInMonth(itemId, start, end);
-        if (dayPresent.isEmpty()) {
+        cellRepository.flush();
+        if (dayPresent == null || dayPresent.isEmpty()) {
             return;
         }
+        Set<LocalDate> writtenDays = new HashSet<>();
         for (Map.Entry<Integer, Boolean> e : dayPresent.entrySet()) {
             Integer dom = e.getKey();
             if (dom == null || dom < 1 || dom > ym.lengthOfMonth()) {
@@ -281,6 +283,9 @@ public class SiteEquipmentService {
                 continue;
             }
             LocalDate day = ym.atDay(dom);
+            if (!writtenDays.add(day)) {
+                continue;
+            }
             SiteEquipmentAvailabilityCell cell = new SiteEquipmentAvailabilityCell();
             cell.setItem(itemRepository.getReferenceById(itemId));
             cell.setCalendarDay(day);
