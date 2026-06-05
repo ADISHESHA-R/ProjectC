@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -144,6 +145,20 @@ public class CustomerFeedbackService {
             if (body.getExtra() != null && !body.getExtra().isNull()) {
                 root.set("extra", body.getExtra());
             }
+            for (Map.Entry<String, JsonNode> e : body.getRawExtraJsonFields().entrySet()) {
+                String k = e.getKey();
+                if ("token".equalsIgnoreCase(k)) {
+                    continue;
+                }
+                JsonNode v = e.getValue();
+                if (root.has(k)) {
+                    JsonNode cur = root.get(k);
+                    if (cur != null && !cur.isNull() && !(cur.isTextual() && cur.asText().isBlank())) {
+                        continue;
+                    }
+                }
+                root.set(k, v);
+            }
             root.put("submittedAt", LocalDateTime.now().toString());
             site.setCustomerFeedbackPayload(objectMapper.writeValueAsString(root));
             site.setCertificateClientStatus(CertificateClientStatus.FEEDBACK_SUBMITTED);
@@ -227,7 +242,11 @@ public class CustomerFeedbackService {
             return;
         }
         try {
-            JsonNode n = objectMapper.readTree(payloadJson);
+            JsonNode raw = objectMapper.readTree(payloadJson);
+            if (!raw.isObject()) {
+                return;
+            }
+            JsonNode n = mergeNestedFeedbackShapes(raw);
             if (!n.isObject()) {
                 return;
             }
@@ -253,6 +272,32 @@ public class CustomerFeedbackService {
         }
     }
 
+    /**
+     * Copies nested objects (e.g. {@code feedback: { ... }}) onto the root so flat field extraction finds them.
+     */
+    private JsonNode mergeNestedFeedbackShapes(JsonNode root) {
+        if (root == null || !root.isObject()) {
+            return root;
+        }
+        ObjectNode out = root.deepCopy();
+        String[] nests = {"feedback", "feedbackPayload", "customerFeedback", "payload", "data"};
+        for (String wrap : nests) {
+            if (!out.has(wrap) || !out.get(wrap).isObject()) {
+                continue;
+            }
+            out.get(wrap).fields().forEachRemaining(e -> {
+                String k = e.getKey();
+                JsonNode v = e.getValue();
+                if (!out.has(k) || out.get(k).isNull()) {
+                    out.set(k, v);
+                } else if (out.get(k).isTextual() && out.get(k).asText().isBlank()) {
+                    out.set(k, v);
+                }
+            });
+        }
+        return out;
+    }
+
     private static String textOrNull(JsonNode n, String... keys) {
         for (String k : keys) {
             if (n.has(k) && !n.get(k).isNull()) {
@@ -273,6 +318,9 @@ public class CustomerFeedbackService {
             JsonNode v = n.get(k);
             if (v.isIntegralNumber()) {
                 return v.intValue();
+            }
+            if (v.isFloatingPointNumber()) {
+                return (int) Math.round(v.asDouble());
             }
             if (v.isTextual()) {
                 try {
