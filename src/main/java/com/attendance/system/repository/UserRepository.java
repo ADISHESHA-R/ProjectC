@@ -28,22 +28,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
         Pageable pageable);
 
     /**
-     * Text search: native SQL with CAST(... AS TEXT) so PostgreSQL applies LOWER() to text, not bytea.
-     * Role/status use String (enum names) so PostgreSQL compares varchar columns to varchar; binding
-     * enums in native queries can use ordinals (smallint) and cause type errors.
+     * Text search — portable SQL (PostgreSQL + MySQL). Role/status bound as enum name strings.
      */
     @Query(value = "SELECT u.* FROM users u WHERE " +
-           "(LOWER(CAST(u.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(u.email AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(u.employee_id AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(CAST(:role AS VARCHAR) IS NULL OR u.role = CAST(:role AS VARCHAR)) AND " +
-           "(CAST(:status AS VARCHAR) IS NULL OR u.status = CAST(:status AS VARCHAR))",
+           "(LOWER(COALESCE(u.name, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(u.employee_id, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:role IS NULL OR u.role = :role) AND " +
+           "(:status IS NULL OR u.status = :status)",
            countQuery = "SELECT count(*) FROM users u WHERE " +
-           "(LOWER(CAST(u.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(u.email AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(u.employee_id AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(CAST(:role AS VARCHAR) IS NULL OR u.role = CAST(:role AS VARCHAR)) AND " +
-           "(CAST(:status AS VARCHAR) IS NULL OR u.status = CAST(:status AS VARCHAR))",
+           "(LOWER(COALESCE(u.name, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(u.employee_id, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:role IS NULL OR u.role = :role) AND " +
+           "(:status IS NULL OR u.status = :status)",
            nativeQuery = true)
     Page<User> searchUsers(
         @Param("search") String search,

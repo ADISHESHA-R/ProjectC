@@ -18,4 +18,10 @@ public class DatabaseConfig {
     public String databaseTypeRender() {
         return "PostgreSQL - Render Deployment (Shared Database)";
     }
+
+    @Bean
+    @Profile("mysql")
+    public String databaseTypeMysql() {
+        return "MySQL";
+    }
 }

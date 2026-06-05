@@ -1,0 +1,37 @@
+# MySQL — activate with: SPRING_PROFILES_ACTIVE=mysql
+# Does not replace Render: keep profile "render" for PostgreSQL on Render.
+#
+# Set MYSQL_JDBC_URL, or MYSQL_HOST + MYSQL_PORT + MYSQL_DATABASE + MYSQL_USER + MYSQL_PASSWORD.
+
+spring:
+  datasource:
+    url: ${MYSQL_JDBC_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:attendance}?useSSL=${MYSQL_USE_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8}
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 60000
+      maximum-pool-size: 10
+      minimum-idle: 1
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: ${MYSQL_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        naming:
+          physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+          implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+
+logging:
+  level:
+    root: INFO
+    org.hibernate: INFO
+    com.attendance: INFO
+    com.zaxxer.hikari: WARN

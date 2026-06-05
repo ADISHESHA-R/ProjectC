@@ -18,10 +18,10 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     Page<Notice> filterNotices(Pageable pageable);
 
     @Query(value = "SELECT n.* FROM notices n WHERE " +
-           "LOWER(CAST(n.message AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "LOWER(COALESCE(n.message, '')) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "ORDER BY n.updated_at DESC",
            countQuery = "SELECT count(*) FROM notices n WHERE " +
-           "LOWER(CAST(n.message AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))",
+           "LOWER(COALESCE(n.message, '')) LIKE LOWER(CONCAT('%', :search, '%'))",
            nativeQuery = true)
     Page<Notice> searchNotices(@Param("search") String search, Pageable pageable);
 }

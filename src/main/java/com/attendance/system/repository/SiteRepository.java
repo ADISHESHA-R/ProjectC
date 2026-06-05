@@ -14,20 +14,20 @@ import java.util.Optional;
 @Repository
 public interface SiteRepository extends JpaRepository<Site, Long> {
 
-    /** List/filter only — no LOWER() on text columns (avoids PostgreSQL lower(bytea) when columns are bytea). */
+    /** List/filter only — portable SQL (PostgreSQL + MySQL). */
     @Query("SELECT s FROM Site s WHERE (:isActive IS NULL OR s.isActive = :isActive)")
     Page<Site> filterSites(@Param("isActive") Boolean isActive, Pageable pageable);
 
     @Query(value = "SELECT s.* FROM sites s WHERE " +
-           "(LOWER(CAST(s.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(s.job_code AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(COALESCE(s.address, '') AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(CAST(:isActive AS BOOLEAN) IS NULL OR s.is_active = CAST(:isActive AS BOOLEAN))",
+           "(LOWER(COALESCE(s.name, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(s.job_code, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(s.address, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:isActive IS NULL OR s.is_active = :isActive)",
            countQuery = "SELECT count(*) FROM sites s WHERE " +
-           "(LOWER(CAST(s.name AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(s.job_code AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(CAST(COALESCE(s.address, '') AS TEXT)) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(CAST(:isActive AS BOOLEAN) IS NULL OR s.is_active = CAST(:isActive AS BOOLEAN))",
+           "(LOWER(COALESCE(s.name, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(s.job_code, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(COALESCE(s.address, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:isActive IS NULL OR s.is_active = :isActive)",
            nativeQuery = true)
     Page<Site> searchSites(
         @Param("search") String search,
