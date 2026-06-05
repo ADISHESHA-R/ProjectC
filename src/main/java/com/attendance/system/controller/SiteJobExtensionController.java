@@ -12,8 +12,8 @@ import com.attendance.system.dto.jobsite.SiteToolIssueDto;
 import com.attendance.system.dto.response.ApiResponse;
 import com.attendance.system.dto.response.AttendanceRegisterResponse;
 import com.attendance.system.dto.response.FeedbackInviteResponse;
+import com.attendance.system.dto.response.SiteCustomerFeedbackAdminDto;
 import com.attendance.system.dto.response.SiteResponse;
-import com.attendance.system.enums.CertificateClientStatus;
 import com.attendance.system.service.AttendanceService;
 import com.attendance.system.service.CustomerFeedbackService;
 import com.attendance.system.service.SiteEquipmentService;
@@ -26,7 +26,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +39,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -235,7 +233,9 @@ public class SiteJobExtensionController {
     }
 
     @GetMapping("/{id}/customer-feedback")
-    @Operation(summary = "Admin view of customer feedback", description = "Certificate status + raw feedback JSON.")
+    @Operation(
+        summary = "Admin view of customer feedback",
+        description = "Certificate status, invite meta, raw feedbackJson, and the same answers as flat fields (parsed from stored JSON) for completion UIs.")
     public ResponseEntity<ApiResponse<SiteCustomerFeedbackAdminDto>> customerFeedback(@AdminSitePathId Long id) {
         SiteResponse site = siteService.getSiteById(id);
         SiteCustomerFeedbackAdminDto dto = new SiteCustomerFeedbackAdminDto();
@@ -243,17 +243,9 @@ public class SiteJobExtensionController {
         dto.setCustomerFeedbackApprovedAt(site.getCustomerFeedbackApprovedAt());
         dto.setCustomerFeedbackInviteToken(site.getCustomerFeedbackInviteToken());
         dto.setCustomerFeedbackInviteExpiresAt(site.getCustomerFeedbackInviteExpiresAt());
-        dto.setFeedbackJson(customerFeedbackService.getFeedbackPayloadForAdmin(id));
+        String payload = customerFeedbackService.getFeedbackPayloadForAdmin(id);
+        dto.setFeedbackJson(payload);
+        customerFeedbackService.mergeStoredCustomerFeedbackIntoDto(dto, payload);
         return ResponseEntity.ok(ApiResponse.success(dto));
-    }
-
-    @Data
-    public static class SiteCustomerFeedbackAdminDto {
-        private CertificateClientStatus certificateClientStatus;
-        private LocalDateTime customerFeedbackApprovedAt;
-        /** Opaque token for public link: {@code /customer-feedback/{siteId}?token=...} */
-        private String customerFeedbackInviteToken;
-        private LocalDateTime customerFeedbackInviteExpiresAt;
-        private String feedbackJson;
     }
 }

@@ -3,6 +3,7 @@ package com.attendance.system.service;
 import com.attendance.system.dto.request.CustomerFeedbackSubmitRequest;
 import com.attendance.system.dto.response.FeedbackInviteResponse;
 import com.attendance.system.dto.response.PublicFeedbackContextResponse;
+import com.attendance.system.dto.response.SiteCustomerFeedbackAdminDto;
 import com.attendance.system.entity.CustomerFeedbackToken;
 import com.attendance.system.entity.Site;
 import com.attendance.system.enums.CertificateClientStatus;
@@ -215,5 +216,72 @@ public class CustomerFeedbackService {
         Site site = siteRepository.findById(siteId)
             .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
         return site.getCustomerFeedbackPayload();
+    }
+
+    /**
+     * Copies answers from stored JSON into flat DTO fields for admin completion UIs (in addition to {@code feedbackJson}).
+     * Accepts camelCase keys as stored by {@link #persistFeedbackPayload}, plus common snake_case aliases.
+     */
+    public void mergeStoredCustomerFeedbackIntoDto(SiteCustomerFeedbackAdminDto dto, String payloadJson) {
+        if (payloadJson == null || payloadJson.isBlank()) {
+            return;
+        }
+        try {
+            JsonNode n = objectMapper.readTree(payloadJson);
+            if (!n.isObject()) {
+                return;
+            }
+            dto.setName(textOrNull(n, "name", "customer_name"));
+            dto.setEmail(textOrNull(n, "email", "customer_email"));
+            dto.setPhone(textOrNull(n, "phone", "phone_number"));
+            dto.setCompanyName(textOrNull(n, "companyName", "company_name"));
+            dto.setProductQuality(textOrNull(n, "productQuality", "product_quality"));
+            dto.setCustomerService(textOrNull(n, "customerService", "customer_service"));
+            dto.setMachiningQuality(textOrNull(n, "machiningQuality", "machining_quality"));
+            dto.setPricing(textOrNull(n, "pricing"));
+            dto.setShippingDelivery(textOrNull(n, "shippingDelivery", "shipping_delivery"));
+            dto.setOtherCategoryNote(textOrNull(n, "otherCategoryNote", "other_category_note"));
+            dto.setSpecificFeedback(textOrNull(n, "specificFeedback", "specific_feedback"));
+            dto.setSuggestions(textOrNull(n, "suggestions"));
+            dto.setLikelihoodRecommend(intOrNull(n, "likelihoodRecommend", "likelihood_recommend"));
+            dto.setAdditionalComments(textOrNull(n, "additionalComments", "additional_comments"));
+            if (n.has("extra") && !n.get("extra").isNull()) {
+                dto.setExtra(n.get("extra"));
+            }
+        } catch (Exception ignored) {
+            // leave flat fields null; feedbackJson still set by caller
+        }
+    }
+
+    private static String textOrNull(JsonNode n, String... keys) {
+        for (String k : keys) {
+            if (n.has(k) && !n.get(k).isNull()) {
+                String t = n.get(k).asText();
+                if (t != null && !t.isBlank()) {
+                    return t;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Integer intOrNull(JsonNode n, String... keys) {
+        for (String k : keys) {
+            if (!n.has(k) || n.get(k).isNull()) {
+                continue;
+            }
+            JsonNode v = n.get(k);
+            if (v.isIntegralNumber()) {
+                return v.intValue();
+            }
+            if (v.isTextual()) {
+                try {
+                    return Integer.parseInt(v.asText().trim());
+                } catch (NumberFormatException ignored) {
+                    // try next key
+                }
+            }
+        }
+        return null;
     }
 }

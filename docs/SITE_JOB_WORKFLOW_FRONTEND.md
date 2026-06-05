@@ -48,7 +48,7 @@ Meta: `GET /api/meta/challenge-line-heads` for challenge head presets.
 
 - **Create invite (optional):** `POST /api/admin/sites/{siteId}/feedback-invites` → returns opaque `token` for the legacy token link.
 - **Site details** `GET /api/admin/sites/{siteId}` include invite fields when a valid token exists (`customerFeedbackInviteToken`, `customerFeedbackInviteExpiresAt`).
-- **Admin feedback payload:** `GET /api/admin/sites/{siteId}/customer-feedback` (JWT) returns stored JSON + token fields.
+- **Admin feedback / completion:** `GET /api/admin/sites/{siteId}/customer-feedback` (JWT) returns `certificateClientStatus`, invite fields, **`feedbackJson`** (raw stored string), **and the same answers as top-level fields** (`name`, `email`, `productQuality`, `specificFeedback`, …) parsed from that JSON so UIs can bind read-only fields without only parsing `feedbackJson`. Optional `extra` object is passed through when present.
 
 ### Tokenless public flow (recommended for simple SPA)
 
@@ -69,7 +69,7 @@ Meta: `GET /api/meta/challenge-line-heads` for challenge head presets.
 
 1. **`siteId` in paths** can be numeric id, job code, or slug (see above); optional resolve step is not required if you reuse the route segment.
 2. **On load per step:** call the matching `GET` endpoints and hydrate tables (not only the wizard blob).
-3. **On autosave / Save:** call either **`workflow-batch`** with only the sections that changed, or the individual `PUT` endpoints. Wait for `200` and `success: true` before clearing "Saving…".
+3. **Persisting workflow data:** use dedicated `GET`/`PUT` (or **`workflow-batch`**) so a reload shows saved data. **Wizard-only autosave** is optional; if you remove interval autosave, still call these APIs on **Save**, **blur**, or **step change** so the “second visit” loads from the server.
 4. **Equipment month grid:** include `availabilityYear` and `availabilityMonth` on equipment portal saves when persisting day checkboxes.
 5. **Challenges:** send `challengeLines` (array of rows with `headLabel` or catalog index / row order) or rely on wizard sync if the wizard JSON embeds a recognized `challengeLines` / `step7` array.
-6. **Feedback step:** optional `POST .../feedback-invites` for token links; for tokenless flow use `GET /api/public/sites/{siteId}/customer-feedback` then `POST` the same path without `token`. Admin views pick up `certificateClientStatus` and payload automatically.
+6. **Feedback step:** optional `POST .../feedback-invites` for token links; for tokenless flow use `GET /api/public/sites/{siteId}/customer-feedback` then `POST` the same path without `token`. Admin step 10 / completion: **`GET .../customer-feedback`** — use flat `data.name`, `data.specificFeedback`, etc., or `data.feedbackJson`; both are populated after deploy.
