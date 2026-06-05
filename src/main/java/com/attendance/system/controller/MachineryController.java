@@ -9,6 +9,7 @@ import com.attendance.system.dto.response.MachineryResponse;
 import com.attendance.system.dto.response.MonthlyUsageSummaryResponse;
 import com.attendance.system.dto.response.YearlyUsageSummaryResponse;
 import com.attendance.system.service.MachineryService;
+import com.attendance.system.service.SiteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,11 +33,13 @@ import java.util.List;
 public class MachineryController {
 
     private final MachineryService machineryService;
+    private final SiteService siteService;
 
     @GetMapping
     @Operation(summary = "List machinery catalog for a site")
-    public ResponseEntity<ApiResponse<List<MachineryResponse>>> listForSite(@RequestParam Long siteId) {
-        return ResponseEntity.ok(ApiResponse.success(machineryService.listMachineryForSite(siteId)));
+    public ResponseEntity<ApiResponse<List<MachineryResponse>>> listForSite(@RequestParam String siteId) {
+        long sid = siteService.resolveSiteIdFromClientKey(siteId);
+        return ResponseEntity.ok(ApiResponse.success(machineryService.listMachineryForSite(sid)));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -70,10 +73,11 @@ public class MachineryController {
     @GetMapping("/usage/selection")
     @Operation(summary = "Daily view: catalog for site with qty/uom per machine for the date")
     public ResponseEntity<ApiResponse<DailyUsageSelectionResponse>> getUsageSelection(
-            @RequestParam Long siteId,
+            @RequestParam String siteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return ResponseEntity.ok(ApiResponse.success(machineryService.getDailySelection(siteId, date)));
+        long sid = siteService.resolveSiteIdFromClientKey(siteId);
+        return ResponseEntity.ok(ApiResponse.success(machineryService.getDailySelection(sid, date)));
     }
 
     @PutMapping("/usage/selection")
@@ -86,19 +90,21 @@ public class MachineryController {
     @GetMapping("/usage/summary/month")
     @Operation(summary = "Monthly overview: days with usage counts and machine codes")
     public ResponseEntity<ApiResponse<MonthlyUsageSummaryResponse>> monthlySummary(
-            @RequestParam Long siteId,
+            @RequestParam String siteId,
             @RequestParam int year,
             @RequestParam int month
     ) {
-        return ResponseEntity.ok(ApiResponse.success(machineryService.getMonthlySummary(siteId, year, month)));
+        long sid = siteService.resolveSiteIdFromClientKey(siteId);
+        return ResponseEntity.ok(ApiResponse.success(machineryService.getMonthlySummary(sid, year, month)));
     }
 
     @GetMapping("/usage/summary/year")
     @Operation(summary = "Yearly overview: per-month aggregates")
     public ResponseEntity<ApiResponse<YearlyUsageSummaryResponse>> yearlySummary(
-            @RequestParam Long siteId,
+            @RequestParam String siteId,
             @RequestParam int year
     ) {
-        return ResponseEntity.ok(ApiResponse.success(machineryService.getYearlySummary(siteId, year)));
+        long sid = siteService.resolveSiteIdFromClientKey(siteId);
+        return ResponseEntity.ok(ApiResponse.success(machineryService.getYearlySummary(sid, year)));
     }
 }

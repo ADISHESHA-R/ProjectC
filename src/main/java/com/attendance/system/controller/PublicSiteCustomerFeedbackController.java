@@ -3,12 +3,12 @@ package com.attendance.system.controller;
 import com.attendance.system.dto.request.CustomerFeedbackSubmitRequest;
 import com.attendance.system.dto.response.ApiResponse;
 import com.attendance.system.service.CustomerFeedbackService;
+import com.attendance.system.web.AdminSitePathId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +28,7 @@ public class PublicSiteCustomerFeedbackController {
         description = "Same persistence as POST /api/public/feedback/{token}. Body must include \"token\" (opaque invite); it must belong to siteId."
     )
     public ResponseEntity<ApiResponse<Void>> submit(
-        @PathVariable Long siteId,
+        @AdminSitePathId Long siteId,
         @Valid @RequestBody CustomerFeedbackSubmitRequest body) {
         customerFeedbackService.submitFeedbackForSite(siteId, body);
         return ResponseEntity.ok(ApiResponse.success("Feedback saved", null));

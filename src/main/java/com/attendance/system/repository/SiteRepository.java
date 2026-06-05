@@ -34,6 +34,9 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
         @Param("isActive") Boolean isActive,
         Pageable pageable);
     Optional<Site> findByJobCode(String jobCode);
+
+    Optional<Site> findByJobCodeIgnoreCase(String jobCode);
+
     boolean existsByJobCode(String jobCode);
     Optional<Site> findByIdAndIsActiveTrue(Long id);
 

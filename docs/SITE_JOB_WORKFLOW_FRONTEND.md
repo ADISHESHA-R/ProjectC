@@ -1,7 +1,14 @@
 # Site job workflow — backend APIs and frontend integration
 
 Base path (admin, JWT required): `/api/admin/sites/{siteId}`  
-Replace `{siteId}` with the numeric site id (e.g. `1`). Your SPA may resolve `bangalore-blr001` to id via `GET /api/admin/sites` or a slug endpoint.
+
+**`{siteId}` in the path** is resolved by the server as any of:
+
+- Numeric primary key (e.g. `1`)
+- Exact **job code** (case-insensitive), e.g. `BLR001`
+- UI slug **`{name}-{jobCode}`** using the segment after the last hyphen as job code, e.g. `bangalore-blr001` → `blr001` → same site as `BLR001`
+
+So the SPA may call the same URLs it uses in the browser (slug) without a separate resolve step. Machinery `?siteId=` query params accept the same formats.
 
 ## One-call autosave (recommended)
 
@@ -55,7 +62,7 @@ Do **not** use only `/customer-feedback/{siteId}` without `token`.
 
 ## Frontend checklist
 
-1. **Resolve `siteId`** for the workflow route (slug to id once, then use id in all API paths).
+1. **`siteId` in paths** can be numeric id, job code, or slug (see above); optional resolve step is not required if you reuse the route segment.
 2. **On load per step:** call the matching `GET` endpoints and hydrate tables (not only the wizard blob).
 3. **On autosave / Save:** call either **`workflow-batch`** with only the sections that changed, or the individual `PUT` endpoints. Wait for `200` and `success: true` before clearing "Saving…".
 4. **Equipment month grid:** include `availabilityYear` and `availabilityMonth` on equipment portal saves when persisting day checkboxes.

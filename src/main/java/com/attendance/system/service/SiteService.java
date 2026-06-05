@@ -150,6 +150,38 @@ public class SiteService {
         siteRepository.delete(site);
     }
 
+    /**
+     * Resolves a site key from URLs or query params: numeric DB id, exact job code, or UI slug
+     * {@code {name}-{jobCode}} (job code is taken as the segment after the last {@code '-'}, case-insensitive).
+     */
+    public long resolveSiteIdFromClientKey(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new ResourceNotFoundException("Site not found: empty key");
+        }
+        String key = raw.trim();
+        if (key.chars().allMatch(ch -> ch >= '0' && ch <= '9')) {
+            long numericId = Long.parseLong(key);
+            if (siteRepository.existsById(numericId)) {
+                return numericId;
+            }
+            return siteRepository.findByJobCodeIgnoreCase(key)
+                .map(Site::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("Site not found with id or job code: " + key));
+        }
+        Optional<Site> byFullCode = siteRepository.findByJobCodeIgnoreCase(key);
+        if (byFullCode.isPresent()) {
+            return byFullCode.get().getId();
+        }
+        int lastDash = key.lastIndexOf('-');
+        if (lastDash > 0 && lastDash < key.length() - 1) {
+            String suffix = key.substring(lastDash + 1);
+            return siteRepository.findByJobCodeIgnoreCase(suffix)
+                .map(Site::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("Site not found: " + key));
+        }
+        throw new ResourceNotFoundException("Site not found: " + key);
+    }
+
     public SiteResponse getSiteById(Long id) {
         Site site = siteRepository.findByIdWithJobMeta(id)
             .orElseThrow(() -> new ResourceNotFoundException("Site", id));

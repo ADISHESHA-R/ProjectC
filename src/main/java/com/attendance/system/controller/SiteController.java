@@ -3,6 +3,7 @@ package com.attendance.system.controller;
 import com.attendance.system.dto.response.ApiResponse;
 import com.attendance.system.dto.response.SiteResponse;
 import com.attendance.system.service.SiteService;
+import com.attendance.system.web.AdminSitePathId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +36,7 @@ public class SiteController {
     
     @GetMapping("/{id}")
     @Operation(summary = "Get site by ID", description = "Get site details by ID (All authenticated users)")
-    public ResponseEntity<ApiResponse<SiteResponse>> getSiteById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<SiteResponse>> getSiteById(@AdminSitePathId Long id) {
         return ResponseEntity.ok(ApiResponse.success(siteService.getSiteById(id)));
     }
     

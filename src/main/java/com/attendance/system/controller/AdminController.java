@@ -27,6 +27,7 @@ import com.attendance.system.service.FileStorageService;
 import com.attendance.system.service.NoticeService;
 import com.attendance.system.service.SiteService;
 import com.attendance.system.service.UserService;
+import com.attendance.system.web.AdminSitePathId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -261,14 +262,14 @@ public class AdminController {
 
     @GetMapping("/sites/{id}")
     @Operation(summary = "Get site by ID", description = "Get site details by ID (Admin only)")
-    public ResponseEntity<ApiResponse<SiteResponse>> getSiteById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<SiteResponse>> getSiteById(@AdminSitePathId Long id) {
         return ResponseEntity.ok(ApiResponse.success(siteService.getSiteById(id)));
     }
     
     @PutMapping("/sites/{id}")
     @Operation(summary = "Update site", description = "Update site details (name, job code, address, status) (Admin only)")
     public ResponseEntity<ApiResponse<SiteResponse>> updateSite(
-            @PathVariable Long id,
+            @AdminSitePathId Long id,
             @Valid @RequestBody UpdateSiteRequest request) {
         SiteResponse site = siteService.updateSite(id, request);
         return ResponseEntity.ok(ApiResponse.success("Site updated successfully", site));
@@ -276,14 +277,14 @@ public class AdminController {
     
     @DeleteMapping("/sites/{id}")
     @Operation(summary = "Delete site", description = "Delete site by ID (Admin only)")
-    public ResponseEntity<ApiResponse<Void>> deleteSite(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteSite(@AdminSitePathId Long id) {
         siteService.deleteSite(id);
         return ResponseEntity.ok(ApiResponse.success("Site deleted successfully", null));
     }
     
     @PutMapping("/sites/{id}/activate")
     @Operation(summary = "Activate site", description = "Activate site (Admin only)")
-    public ResponseEntity<ApiResponse<SiteResponse>> activateSite(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<SiteResponse>> activateSite(@AdminSitePathId Long id) {
         UpdateSiteRequest request = new UpdateSiteRequest();
         request.setIsActive(true);
         SiteResponse site = siteService.updateSite(id, request);
@@ -292,7 +293,7 @@ public class AdminController {
     
     @PutMapping("/sites/{id}/deactivate")
     @Operation(summary = "Deactivate site", description = "Deactivate site (Admin only)")
-    public ResponseEntity<ApiResponse<SiteResponse>> deactivateSite(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<SiteResponse>> deactivateSite(@AdminSitePathId Long id) {
         UpdateSiteRequest request = new UpdateSiteRequest();
         request.setIsActive(false);
         SiteResponse site = siteService.updateSite(id, request);
