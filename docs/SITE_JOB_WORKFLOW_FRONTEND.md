@@ -1,5 +1,7 @@
 # Site job workflow — backend APIs and frontend integration
 
+**Response contracts (admin Step 10 / customer feedback envelope + DTO):** see [`SITE_JOB_WORKFLOW_API.md`](SITE_JOB_WORKFLOW_API.md).
+
 Base path (admin, JWT required): `/api/admin/sites/{siteId}`  
 
 **`{siteId}` in the path** is resolved by the server as any of:
