@@ -239,6 +239,8 @@ public class SiteJobExtensionController {
     public ResponseEntity<ApiResponse<SiteCustomerFeedbackAdminDto>> customerFeedback(@AdminSitePathId Long id) {
         SiteResponse site = siteService.getSiteById(id);
         SiteCustomerFeedbackAdminDto dto = new SiteCustomerFeedbackAdminDto();
+        dto.setSiteId(site.getId());
+        dto.setJobCode(site.getJobCode());
         dto.setCertificateClientStatus(site.getCertificateClientStatus());
         dto.setCustomerFeedbackApprovedAt(site.getCustomerFeedbackApprovedAt());
         dto.setCustomerFeedbackInviteToken(site.getCustomerFeedbackInviteToken());

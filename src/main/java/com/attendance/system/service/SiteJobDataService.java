@@ -14,6 +14,7 @@ import com.attendance.system.entity.SiteChallengeLine;
 import com.attendance.system.entity.SiteTechnicianDailyPayment;
 import com.attendance.system.entity.SiteToolIssue;
 import com.attendance.system.entity.User;
+import com.attendance.system.enums.SiteChallengeStatus;
 import com.attendance.system.exception.ResourceNotFoundException;
 import com.attendance.system.repository.SiteAdvanceExpenseLineRepository;
 import com.attendance.system.repository.SiteAttendanceRegisterCellRepository;
@@ -34,7 +35,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,12 +46,14 @@ import java.util.stream.Collectors;
 public class SiteJobDataService {
 
     private static final String[] CHALLENGE_LINE_ARRAY_KEYS = {
-        "challengeLines", "challenges", "siteChallengeLines", "challengeRows", "rows", "lines", "items", "data"
+        "challengeLines", "challenges", "siteChallengeLines", "challengeRows", "challengeGrid", "siteChallengeGrid",
+        "rows", "lines", "items", "data", "grid"
     };
 
     /** Additional wizard root keys that hold the challenges grid array. */
     private static final String[] CHALLENGE_ARRAY_EXTRA_ROOT_KEYS = {
-        "challengeTable", "siteChallenges", "challengesAtSite", "step7Challenges", "step9Challenges"
+        "challengeTable", "siteChallenges", "challengesAtSite", "step7Challenges", "step9Challenges",
+        "challengeGrid", "step7Data", "step9Data"
     };
 
     private static final String[] WIZARD_STEP_KEYS = {"step7", "step9", "step_7", "step_9"};
@@ -303,7 +309,7 @@ public class SiteJobDataService {
         d.setIncidentDate(line.getIncidentDate());
         d.setInvolvedUserId(line.getInvolvedUser() != null ? line.getInvolvedUser().getId() : null);
         d.setChallengesFaced(line.getChallengesFaced());
-        d.setStatus(line.getStatus());
+        d.setStatus(line.getStatus() != null ? line.getStatus().name() : null);
         return d;
     }
 
@@ -324,7 +330,7 @@ public class SiteJobDataService {
         return d.getIncidentDate() != null
             || d.getInvolvedUserId() != null
             || (d.getChallengesFaced() != null && !d.getChallengesFaced().isBlank())
-            || d.getStatus() != null;
+            || (d.getStatus() != null && !d.getStatus().isBlank());
     }
 
     /**
@@ -359,6 +365,18 @@ public class SiteJobDataService {
         return null;
     }
 
+    /** First array found under common challenge keys (primary + alternate wizard wrappers). */
+    private JsonNode findFirstChallengeArrayInObject(JsonNode object) {
+        if (object == null || !object.isObject()) {
+            return null;
+        }
+        JsonNode a = findFirstArrayChild(object, CHALLENGE_LINE_ARRAY_KEYS);
+        if (a != null) {
+            return a;
+        }
+        return findFirstArrayChild(object, CHALLENGE_ARRAY_EXTRA_ROOT_KEYS);
+    }
+
     /**
      * Looks for a challenge row array inside the wizard JSON (several common shapes).
      */
@@ -374,6 +392,21 @@ public class SiteJobDataService {
         if (extraRoot != null) {
             return extraRoot;
         }
+        for (String idx : List.of("7", "9")) {
+            if (!root.has(idx)) {
+                continue;
+            }
+            JsonNode step = root.get(idx);
+            if (step.isArray()) {
+                return step;
+            }
+            if (step.isObject()) {
+                JsonNode nested = findFirstChallengeArrayInObject(step);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
         for (String sk : WIZARD_STEP_KEYS) {
             if (!root.has(sk)) {
                 continue;
@@ -384,7 +417,7 @@ public class SiteJobDataService {
                 return step;
             }
             if (step.isObject()) {
-                JsonNode nested = findFirstArrayChild(step, CHALLENGE_LINE_ARRAY_KEYS);
+                JsonNode nested = findFirstChallengeArrayInObject(step);
                 if (nested != null) {
                     return nested;
                 }
@@ -401,7 +434,7 @@ public class SiteJobDataService {
                     return step;
                 }
                 if (step.isObject()) {
-                    JsonNode nested = findFirstArrayChild(step, CHALLENGE_LINE_ARRAY_KEYS);
+                    JsonNode nested = findFirstChallengeArrayInObject(step);
                     if (nested != null) {
                         return nested;
                     }
@@ -421,11 +454,15 @@ public class SiteJobDataService {
         int n = Math.min(arrayNode.size(), rows.size());
         for (int i = 0; i < n; i++) {
             SiteChallengeLineDto d = rows.get(i);
-            if (d.getInvolvedUserId() != null) {
-                continue;
-            }
             JsonNode el = arrayNode.get(i);
             if (el == null || !el.isObject()) {
+                continue;
+            }
+            copyHeadLabelFromRawObject(el, d);
+            copyCatalogIndexFromRawObject(el, d);
+            copyChallengesFacedFromRawObject(el, d);
+            copyStatusFromRawObject(el, d);
+            if (d.getInvolvedUserId() != null) {
                 continue;
             }
             if (el.has("involvedUserId") && !el.get("involvedUserId").isNull()) {
@@ -457,6 +494,187 @@ public class SiteJobDataService {
                 }
             }
         }
+    }
+
+    private static void copyHeadLabelFromRawObject(JsonNode el, SiteChallengeLineDto d) {
+        if (d.getHeadLabel() != null && !d.getHeadLabel().isBlank()) {
+            return;
+        }
+        String[] keys = {
+            "heads", "headTitle", "challengeHead", "head_name", "categoryName", "rowHead", "challengeType",
+            "type", "head", "label", "category"
+        };
+        for (String k : keys) {
+            if (!el.has(k) || el.get(k).isNull()) {
+                continue;
+            }
+            JsonNode v = el.get(k);
+            if (v.isTextual()) {
+                String t = v.asText().trim();
+                if (!t.isEmpty()) {
+                    d.setHeadLabel(t);
+                    return;
+                }
+            }
+            if (v.isObject() && v.has("label") && v.get("label").isTextual()) {
+                String t = v.get("label").asText().trim();
+                if (!t.isEmpty()) {
+                    d.setHeadLabel(t);
+                    return;
+                }
+            }
+        }
+    }
+
+    private static void copyCatalogIndexFromRawObject(JsonNode el, SiteChallengeLineDto d) {
+        if (d.getChallengeCatalogIndex() != null) {
+            return;
+        }
+        String[] keys = {"catalogIndex", "headIndex", "catalogIdx", "challengeCatalogIndex"};
+        for (String k : keys) {
+            if (!el.has(k) || el.get(k).isNull()) {
+                continue;
+            }
+            JsonNode v = el.get(k);
+            if (v.isIntegralNumber()) {
+                d.setChallengeCatalogIndex(v.intValue());
+                return;
+            }
+            if (v.isTextual()) {
+                try {
+                    d.setChallengeCatalogIndex(Integer.parseInt(v.asText().trim()));
+                    return;
+                } catch (NumberFormatException ignored) {
+                    // next key
+                }
+            }
+        }
+    }
+
+    private static void copyChallengesFacedFromRawObject(JsonNode el, SiteChallengeLineDto d) {
+        if (d.getChallengesFaced() != null && !d.getChallengesFaced().isBlank()) {
+            return;
+        }
+        String[] keys = {"challengesFaced", "challenges", "notes", "description", "challengeDetails", "actionNotes",
+            "pendingNotes", "resolutionNotes"};
+        for (String k : keys) {
+            if (!el.has(k) || el.get(k).isNull()) {
+                continue;
+            }
+            JsonNode v = el.get(k);
+            if (v.isTextual()) {
+                String t = v.asText().trim();
+                if (!t.isEmpty()) {
+                    d.setChallengesFaced(t);
+                    return;
+                }
+            }
+        }
+    }
+
+    private static void copyStatusFromRawObject(JsonNode el, SiteChallengeLineDto d) {
+        if (d.getStatus() != null && !d.getStatus().isBlank()) {
+            return;
+        }
+        String[] keys = {
+            "status", "resolution", "resolveStatus", "statusText", "state",
+            "resolvedPendingAction", "resolvedOrPending", "actionStatus", "outcome"
+        };
+        for (String k : keys) {
+            if (!el.has(k) || el.get(k).isNull()) {
+                continue;
+            }
+            JsonNode v = el.get(k);
+            if (v.isTextual()) {
+                String t = v.asText().trim();
+                if (!t.isEmpty()) {
+                    d.setStatus(t);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Maps UI free text or enum names to persisted {@link SiteChallengeStatus}; unknown values become {@code null}.
+     */
+    private static SiteChallengeStatus parseFlexibleChallengeStatus(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String compact = raw.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+        try {
+            return SiteChallengeStatus.valueOf(compact);
+        } catch (IllegalArgumentException ignored) {
+            // fall through
+        }
+        if (compact.contains("RESOLV")) {
+            return SiteChallengeStatus.RESOLVED;
+        }
+        if (compact.contains("PEND")) {
+            return SiteChallengeStatus.PENDING;
+        }
+        if (compact.contains("ACTION") || compact.contains("TAKEN")) {
+            return SiteChallengeStatus.ACTION_TAKEN;
+        }
+        return null;
+    }
+
+    private static final Set<String> TRIVIAL_CHALLENGE_JSON_KEYS = Set.of(
+        "lineOrder", "sl", "serial", "order", "rowIndex", "id", "submittedAt", "key", "_id"
+    );
+
+    private static boolean rawChallengeArrayLooksNonEmpty(JsonNode arr) {
+        if (arr == null || !arr.isArray()) {
+            return false;
+        }
+        for (int i = 0; i < arr.size(); i++) {
+            JsonNode el = arr.get(i);
+            if (el == null || !el.isObject()) {
+                continue;
+            }
+            Iterator<Map.Entry<String, JsonNode>> it = el.fields();
+            while (it.hasNext()) {
+                Map.Entry<String, JsonNode> e = it.next();
+                String k = e.getKey();
+                if (TRIVIAL_CHALLENGE_JSON_KEYS.contains(k)) {
+                    continue;
+                }
+                if (hasMeaningfulJsonValue(e.getValue())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasMeaningfulJsonValue(JsonNode v) {
+        if (v == null || v.isNull()) {
+            return false;
+        }
+        if (v.isTextual()) {
+            return !v.asText().isBlank();
+        }
+        if (v.isBoolean()) {
+            return v.booleanValue();
+        }
+        if (v.isNumber()) {
+            return true;
+        }
+        if (v.isArray()) {
+            return v.size() > 0;
+        }
+        if (v.isObject()) {
+            return v.size() > 0;
+        }
+        return false;
+    }
+
+    private boolean shouldSyncChallengesFromWizardArray(JsonNode arr, List<SiteChallengeLineDto> rows) {
+        if (anyWizardRowMapsToPersistedLine(rows)) {
+            return true;
+        }
+        return rawChallengeArrayLooksNonEmpty(arr);
     }
 
     /** True if at least one row would get a non-blank head and be inserted by {@link #doReplaceChallengeLines}. */
@@ -521,10 +739,10 @@ public class SiteJobDataService {
             }
             List<SiteChallengeLineDto> rows = objectMapper.convertValue(arr, new TypeReference<>() {});
             enrichChallengeRowsFromRawJson(arr, rows);
-            if (!anyWizardRowMapsToPersistedLine(rows)) {
+            if (!shouldSyncChallengesFromWizardArray(arr, rows)) {
                 log.warn(
-                    "Challenge lines sync from wizard skipped for site {}: {} row(s) in JSON but none map to a head label "
-                        + "(check step7 shape, headLabel, or involvedUser object vs id).",
+                    "Challenge lines sync from wizard skipped for site {}: {} row(s) in JSON but nothing looks persistable "
+                        + "(check step7 shape, headLabel/heads, or involvedUser object vs id).",
                     siteId, rows.size());
                 return;
             }
@@ -563,7 +781,7 @@ public class SiteJobDataService {
                     .orElseThrow(() -> new ResourceNotFoundException("User", d.getInvolvedUserId())));
             }
             e.setChallengesFaced(d.getChallengesFaced());
-            e.setStatus(d.getStatus());
+            e.setStatus(parseFlexibleChallengeStatus(d.getStatus()));
             challengeLineRepository.save(e);
         }
     }

@@ -2,6 +2,7 @@ package com.attendance.system.dto.response;
 
 import com.attendance.system.enums.CertificateClientStatus;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,13 @@ public class SiteResponse {
     /** Latest valid invite token for public customer feedback (use with {@code ?token=} on the feedback URL). */
     private String customerFeedbackInviteToken;
     private LocalDateTime customerFeedbackInviteExpiresAt;
+
+    /**
+     * Raw customer feedback JSON stored on this site row (same as {@code GET .../customer-feedback} {@code feedbackJson}).
+     * Omitted when null so site list responses stay smaller.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String customerFeedbackJson;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

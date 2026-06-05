@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CustomerFeedbackService {
 
     private final CustomerFeedbackTokenRepository tokenRepository;
@@ -165,6 +169,240 @@ public class CustomerFeedbackService {
             siteRepository.save(site);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not store feedback: " + e.getMessage());
+        }
+    }
+
+    /**
+     * When the admin SPA only persists the wizard blob, lift embedded customer-feedback JSON into
+     * {@link Site#getCustomerFeedbackPayload()} so {@code GET .../customer-feedback} and {@link SiteResponse}
+     * stay on the same site row.
+     */
+    @Transactional
+    public void tryMergeCustomerFeedbackFromWizard(Long siteId, String wizardJson) {
+        if (wizardJson == null || wizardJson.isBlank()) {
+            return;
+        }
+        Site site = siteRepository.findById(siteId).orElse(null);
+        if (site == null) {
+            return;
+        }
+        if (site.getCertificateClientStatus() == CertificateClientStatus.APPROVED_BY_CLIENT) {
+            return;
+        }
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(wizardJson);
+        } catch (Exception e) {
+            return;
+        }
+        JsonNode block = locateCustomerFeedbackInWizard(root);
+        if (block == null) {
+            return;
+        }
+        if (block.isTextual()) {
+            try {
+                block = objectMapper.readTree(block.asText());
+            } catch (Exception e) {
+                return;
+            }
+        }
+        block = unwrapFeedbackWrapper(block);
+        if (block == null || !block.isObject()) {
+            return;
+        }
+        if (!wizardFeedbackObjectHasAnswers(block)) {
+            return;
+        }
+        try {
+            ObjectNode merged = readExistingPayloadAsObject(site.getCustomerFeedbackPayload());
+            overlayJsonObject(merged, (ObjectNode) block);
+            if (!merged.has("submittedAt") || merged.get("submittedAt").isNull()
+                || (merged.get("submittedAt").isTextual() && merged.get("submittedAt").asText().isBlank())) {
+                merged.put("submittedAt", LocalDateTime.now().toString());
+            }
+            site.setCustomerFeedbackPayload(objectMapper.writeValueAsString(merged));
+            if (wizardLooksStrongEnoughForSubmittedStatus(block)
+                && site.getCertificateClientStatus() != CertificateClientStatus.APPROVED_BY_CLIENT) {
+                site.setCertificateClientStatus(CertificateClientStatus.FEEDBACK_SUBMITTED);
+            }
+            siteRepository.save(site);
+        } catch (Exception e) {
+            log.warn("Customer feedback merge from wizard skipped for site {}: {}", siteId, e.getMessage());
+        }
+    }
+
+    private static JsonNode locateCustomerFeedbackInWizard(JsonNode root) {
+        if (root == null || !root.isObject()) {
+            return null;
+        }
+        String[] keys = {
+            "step10", "step_10", "customerFeedback", "customer_feedback", "customerFeedbackForm",
+            "feedbackForm", "completionFeedback", "clientFeedback", "publicFeedback", "feedbackStep"
+        };
+        for (String k : keys) {
+            if (!root.has(k) || root.get(k).isNull()) {
+                continue;
+            }
+            JsonNode v = root.get(k);
+            if (v.isObject() || v.isTextual()) {
+                return v;
+            }
+        }
+        if (root.has("steps") && root.get("steps").isObject()) {
+            JsonNode steps = root.get("steps");
+            if (steps.has("10") && !steps.get("10").isNull()) {
+                JsonNode v = steps.get("10");
+                if (v.isObject() || v.isTextual()) {
+                    return v;
+                }
+            }
+        }
+        if (root.has("10") && !root.get("10").isNull()) {
+            JsonNode v = root.get("10");
+            if (v.isObject() || v.isTextual()) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    private static JsonNode unwrapFeedbackWrapper(JsonNode n) {
+        if (n == null || !n.isObject()) {
+            return n;
+        }
+        if (wizardFeedbackObjectHasAnswers(n)) {
+            return n;
+        }
+        String[] innerKeys = {"form", "data", "payload", "values", "answers", "feedback", "fields", "responses"};
+        for (String ik : innerKeys) {
+            if (!n.has(ik) || n.get(ik).isNull()) {
+                continue;
+            }
+            JsonNode inner = n.get(ik);
+            if (inner.isObject() && wizardFeedbackObjectHasAnswers(inner)) {
+                return inner;
+            }
+        }
+        return n;
+    }
+
+    private static final Set<String> WIZARD_FEEDBACK_METADATA_KEYS = Set.of(
+        "currentStep", "step", "stepIndex", "stepNumber", "enabled", "completed", "dirty", "valid",
+        "key", "_id", "id", "version", "updatedAt", "savedAt"
+    );
+
+    private static boolean wizardFeedbackObjectHasAnswers(JsonNode obj) {
+        if (obj == null || !obj.isObject()) {
+            return false;
+        }
+        Iterator<Map.Entry<String, JsonNode>> it = obj.fields();
+        while (it.hasNext()) {
+            Map.Entry<String, JsonNode> e = it.next();
+            if (WIZARD_FEEDBACK_METADATA_KEYS.contains(e.getKey())) {
+                continue;
+            }
+            if (meaningfulJsonValue(e.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean meaningfulJsonValue(JsonNode v) {
+        if (v == null || v.isNull()) {
+            return false;
+        }
+        if (v.isTextual()) {
+            return !v.asText().isBlank();
+        }
+        if (v.isBoolean()) {
+            return v.booleanValue();
+        }
+        if (v.isNumber()) {
+            return true;
+        }
+        if (v.isArray()) {
+            return v.size() > 0;
+        }
+        if (v.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> it = v.fields();
+            while (it.hasNext()) {
+                if (meaningfulJsonValue(it.next().getValue())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean wizardLooksStrongEnoughForSubmittedStatus(JsonNode block) {
+        if (block == null || !block.isObject()) {
+            return false;
+        }
+        if (textNonBlank(block, "specificFeedback")) {
+            return true;
+        }
+        if (textNonBlank(block, "suggestions")) {
+            return true;
+        }
+        if (textNonBlank(block, "additionalComments")) {
+            return true;
+        }
+        if (textNonBlank(block, "name") && textNonBlank(block, "email")) {
+            return true;
+        }
+        JsonNode nps = block.get("likelihoodRecommend");
+        if (nps != null && !nps.isNull() && nps.isNumber()) {
+            return true;
+        }
+        if (nps != null && nps.isTextual()) {
+            String t = nps.asText().trim();
+            if (!t.isEmpty()) {
+                try {
+                    Integer.parseInt(t);
+                    return true;
+                } catch (NumberFormatException ignored) {
+                    // continue
+                }
+            }
+        }
+        String[] ratings = {"productQuality", "customerService", "machiningQuality", "pricing", "shippingDelivery"};
+        for (String r : ratings) {
+            if (textNonBlank(block, r)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean textNonBlank(JsonNode obj, String field) {
+        return obj.has(field) && obj.get(field).isTextual() && !obj.get(field).asText().isBlank();
+    }
+
+    private ObjectNode readExistingPayloadAsObject(String payloadJson) {
+        if (payloadJson == null || payloadJson.isBlank()) {
+            return objectMapper.createObjectNode();
+        }
+        try {
+            JsonNode n = objectMapper.readTree(payloadJson);
+            if (n.isObject()) {
+                return (ObjectNode) n.deepCopy();
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return objectMapper.createObjectNode();
+    }
+
+    private static void overlayJsonObject(ObjectNode target, ObjectNode overlay) {
+        Iterator<Map.Entry<String, JsonNode>> it = overlay.fields();
+        while (it.hasNext()) {
+            Map.Entry<String, JsonNode> e = it.next();
+            String k = e.getKey();
+            if ("token".equalsIgnoreCase(k)) {
+                continue;
+            }
+            target.set(k, e.getValue());
         }
     }
 

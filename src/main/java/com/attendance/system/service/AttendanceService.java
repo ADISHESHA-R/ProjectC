@@ -468,6 +468,7 @@ public class AttendanceService {
             site.getCustomerFeedbackApprovedAt(),
             null,
             null,
+            site.getCustomerFeedbackPayload(),
             site.getCreatedAt(),
             site.getUpdatedAt()
         );

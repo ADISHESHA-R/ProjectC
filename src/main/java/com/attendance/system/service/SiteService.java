@@ -37,6 +37,7 @@ public class SiteService {
     private final MachineryUsageRepository machineryUsageRepository;
     private final UserRepository userRepository;
     private final CustomerFeedbackTokenRepository customerFeedbackTokenRepository;
+    private final CustomerFeedbackService customerFeedbackService;
     private final SiteJobDataService siteJobDataService;
 
     @Transactional
@@ -240,6 +241,7 @@ public class SiteService {
         site.setWizardData(json);
         siteRepository.save(site);
         siteJobDataService.trySyncChallengeLinesFromWizardString(siteId, json);
+        customerFeedbackService.tryMergeCustomerFeedbackFromWizard(siteId, json);
         return mapToSiteResponse(siteRepository.findByIdWithJobMeta(siteId).orElse(site));
     }
 
@@ -297,6 +299,7 @@ public class SiteService {
             site.getCustomerFeedbackApprovedAt(),
             feedbackToken,
             feedbackTokenExpires,
+            site.getCustomerFeedbackPayload(),
             site.getCreatedAt(),
             site.getUpdatedAt()
         );

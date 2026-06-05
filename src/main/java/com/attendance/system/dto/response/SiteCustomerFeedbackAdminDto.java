@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SiteCustomerFeedbackAdminDto {
 
+    /** Confirms which site row this payload belongs to (same as path id / job). */
+    private Long siteId;
+    private String jobCode;
+
     private CertificateClientStatus certificateClientStatus;
     private LocalDateTime customerFeedbackApprovedAt;
     /** Opaque token for public link: {@code /customer-feedback/{siteId}?token=...} */
