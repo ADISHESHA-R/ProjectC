@@ -68,20 +68,49 @@ public class CustomerFeedbackService {
     }
 
     /**
-     * Same as {@link #submitFeedback(String, CustomerFeedbackSubmitRequest)} but requires {@code body.token}
-     * to match a valid invite for {@code siteId} (path and token must agree).
+     * Public feedback page without invite token: same fields as token-based context for an active site.
+     */
+    @Transactional(readOnly = true)
+    public PublicFeedbackContextResponse getPublicContextForSite(Long siteId) {
+        Site site = siteRepository.findById(siteId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found"));
+        if (!Boolean.TRUE.equals(site.getIsActive())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found");
+        }
+        return new PublicFeedbackContextResponse(
+            site.getJobCode(),
+            site.getCustomerName(),
+            site.getName(),
+            site.getCertificateClientStatus() != null ? site.getCertificateClientStatus() : CertificateClientStatus.NONE,
+            false,
+            false
+        );
+    }
+
+    /**
+     * When {@code body.token} is present, it must match a valid invite for {@code siteId}.
+     * When token is omitted, feedback is stored for the active site (same persistence as token flow).
      */
     @Transactional
     public void submitFeedbackForSite(Long siteId, CustomerFeedbackSubmitRequest body) {
-        if (body.getToken() == null || body.getToken().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "token is required in the request body");
+        if (body.getToken() != null && !body.getToken().isBlank()) {
+            String trimmed = body.getToken().trim();
+            CustomerFeedbackToken row = requireValidToken(trimmed);
+            if (!row.getSite().getId().equals(siteId)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired link");
+            }
+            submitFeedback(trimmed, body);
+            return;
         }
-        String trimmed = body.getToken().trim();
-        CustomerFeedbackToken row = requireValidToken(trimmed);
-        if (!row.getSite().getId().equals(siteId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired link");
+        Site site = siteRepository.findById(siteId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found"));
+        if (!Boolean.TRUE.equals(site.getIsActive())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Site not found");
         }
-        submitFeedback(trimmed, body);
+        if (site.getCertificateClientStatus() == CertificateClientStatus.APPROVED_BY_CLIENT) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Feedback already approved");
+        }
+        persistFeedbackPayload(site, body);
     }
 
     @Transactional
@@ -91,6 +120,10 @@ public class CustomerFeedbackService {
         if (site.getCertificateClientStatus() == CertificateClientStatus.APPROVED_BY_CLIENT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Feedback already approved");
         }
+        persistFeedbackPayload(site, body);
+    }
+
+    private void persistFeedbackPayload(Site site, CustomerFeedbackSubmitRequest body) {
         try {
             ObjectNode root = objectMapper.createObjectNode();
             if (body.getName() != null) root.put("name", body.getName());

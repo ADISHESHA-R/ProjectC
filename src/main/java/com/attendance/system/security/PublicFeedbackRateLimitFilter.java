@@ -61,6 +61,6 @@ public class PublicFeedbackRateLimitFilter extends OncePerRequestFilter {
         if (uri.startsWith("/api/public/feedback")) {
             return true;
         }
-        return uri.startsWith("/api/public/sites/") && uri.endsWith("/customer-feedback");
+        return uri.startsWith("/api/public/sites/") && uri.contains("/customer-feedback");
     }
 }
