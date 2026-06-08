@@ -173,6 +173,15 @@ public class SiteEquipmentService {
             .filter(id -> !survivingCategoryIds.contains(id))
             .collect(Collectors.toList());
         for (Long cid : toDeleteCats) {
+            // Remove items (and cells) still pointing at this category before deleting it.
+            // The earlier global item delete can miss rows (payload shape / flush timing); FK requires this order.
+            List<SiteEquipmentItem> dangling = itemRepository.findByCategory_IdOrderByLineOrderAscIdAsc(cid);
+            if (!dangling.isEmpty()) {
+                List<Long> danglingIds = dangling.stream().map(SiteEquipmentItem::getId).collect(Collectors.toList());
+                cellRepository.deleteByItem_IdIn(danglingIds);
+                itemRepository.deleteAllByIdInBatch(danglingIds);
+                itemRepository.flush();
+            }
             categoryRepository.deleteById(cid);
         }
 
@@ -291,11 +300,8 @@ public class SiteEquipmentService {
             if (!writtenDays.add(day)) {
                 continue;
             }
-            SiteEquipmentAvailabilityCell cell = new SiteEquipmentAvailabilityCell();
-            cell.setItem(itemRepository.getReferenceById(itemId));
-            cell.setCalendarDay(day);
-            cell.setPresent(true);
-            cellRepository.save(cell);
+            // Native upsert: concurrent autosaves can otherwise double-insert the same (item_id, day).
+            cellRepository.upsertPresent(itemId, day, true);
         }
     }
 

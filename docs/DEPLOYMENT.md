@@ -19,6 +19,10 @@ java -jar target/attendance-backend-0.0.1-SNAPSHOT.jar
 | `PUBLIC_FEEDBACK_TOKEN_VALID_DAYS` | Optional (default 30) |
 | `PUBLIC_FEEDBACK_RATE_LIMIT_PER_MINUTE` | Optional (default 120 requests/IP/minute on `/api/public/feedback/**`) |
 
+### Render: `UnknownHostException: dpg-…-a`
+
+The short **internal** hostname from the Postgres **Info** page only resolves on Render’s **private** network. If your Web Service still cannot resolve it (wrong region, networking, or manual env), set **`DB_HOST`** to the **full hostname** from the **External Database URL** (the part between `@` and `:5432`, ending in something like `…-postgres.render.com`). Keep `sslmode=require` (already in the JDBC URL). Prefer linking the database to the service in the Render dashboard so connection details stay correct.
+
 ## Schema
 
 - Hibernate **`ddl-auto: update`** (local + current Render profile) applies JPA entity changes, including new **job-site** tables (`site_*`).

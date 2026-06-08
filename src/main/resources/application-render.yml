@@ -6,6 +6,8 @@ spring:
     # jdbc:postgresql://USER:PASSWORD@host/... (PG JDBC misparses that; "host" becomes USER:PASSWORD@host).
     # Either omit DATABASE_URL and use DB_* below, or set e.g.
     # jdbc:postgresql://HOST:5432/DB?sslmode=require&user=USER&password=PASS
+    # DB_HOST: Render "internal" host is often only dpg-…-a; if you get UnknownHostException,
+    # use the full host from External Database URL (…-postgres.render.com), same region as the DB.
     url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require&connectTimeout=10&socketTimeout=30}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
