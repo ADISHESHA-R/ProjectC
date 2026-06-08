@@ -12,7 +12,7 @@ java -jar target/attendance-backend-0.0.1-SNAPSHOT.jar
 | Variable | Purpose |
 |----------|---------|
 | `SPRING_PROFILES_ACTIVE` | `render` for PostgreSQL profile |
-| `DATABASE_URL` or `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL |
+| `DATABASE_URL` or `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL — if using `DATABASE_URL`, use `jdbc:postgresql://HOST:PORT/DB?...&user=...&password=...` or host-only JDBC + separate credentials; **do not** use `jdbc:postgresql://USER:PASSWORD@HOST/...` (JDBC driver misparses the host). |
 | `JWT_SECRET` | ≥32 chars |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated frontend origins (optional) |
 | `JWT_EXPIRATION` | Optional |
